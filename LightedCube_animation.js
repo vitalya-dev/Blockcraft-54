@@ -43,21 +43,59 @@ function main() {
     const lightDirection = new Vector3([0.5, 3.0, 4.0]).normalize();
     gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
-    const vpMatrix = new Matrix4();
-    vpMatrix.setPerspective(30, canvas.width / canvas.height, 1, 100);
-    vpMatrix.lookAt(0, 0, 15, 0, 0, 0, 0, 1, 0);
-
     const cube_1 = new Cube(gl);
     const cube_2 = new Cube(gl);
+    const camera = new Camera(10, Math.PI / 4, Math.PI / 4);
+
 
     cube_1.transform.translation = [-2, 0, 0];
     cube_2.transform.translation = [2, 0, 0];
 
     let currentAngle = 0.0;
+    let cameraAngle = 0.0;
+
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    canvas.addEventListener("mousedown", (e) => {
+        if (e.button === 0) { // Left mouse button
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        }
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+            const dx = e.clientX - lastMouseX;
+            const dy = e.clientY - lastMouseY;
+
+            // Adjust the sensitivity of the mouse movements
+            const sensitivity = 0.005;
+            camera.updateOrbit(-dx * sensitivity, dy * sensitivity);
+
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        }
+    });
+
+    canvas.addEventListener("mouseup", (e) => {
+        if (e.button === 0) { // Left mouse button
+            isDragging = false;
+        }
+    });
+
+
     const tick = function () {
         currentAngle = animate(currentAngle);
+        cameraAngle += .1;
+
         cube_1.transform.rotation[1] = currentAngle;
         cube_2.transform.rotation[1] = -currentAngle;
+
+        const vpMatrix = new Matrix4();
+        vpMatrix.setPerspective(60, canvas.width / canvas.height, 1, 100).multiply(camera.viewMatrix);
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         cube_1.render(u_MvpMatrix, u_NormalMatrix, vpMatrix);
