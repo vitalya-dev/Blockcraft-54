@@ -13,6 +13,22 @@ function main() {
     }
 
     const triangle = new Triangle(gl);
+    const camera = new Camera();
+
+    canvas.addEventListener("mousedown", (e) => {
+        console.log("f");
+        if (e.button === 0) camera.isDragging = true; // Left mouse button
+    });
+
+    canvas.addEventListener("mouseup", (e) => {
+        if (e.button === 0) camera.isDragging = false;
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+        if (camera.isDragging) {
+            camera.updateMouse(e.movementX, e.movementY);
+        }
+    });
 
     // Apply transformations
     triangle.transform.translation = [0, 0, 0];
@@ -20,6 +36,8 @@ function main() {
     triangle.transform.scale = [1, 1, 1];
 
     const rotationSpeed = 1;
+
+
       // Animation loop
     function render() {
         // Update rotation
@@ -33,10 +51,10 @@ function main() {
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         // Draw the triangle
-        triangle.draw();
+        triangle.draw(camera.getProjectionMatrix(), camera.getViewMatrix());
 
         // Request the next frame
         requestAnimationFrame(render);
     }
-    render()
+    render();
 }

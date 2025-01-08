@@ -15,8 +15,10 @@ class Triangle {
         const vertexShader = this.compileShader(gl.VERTEX_SHADER, `
             attribute vec4 a_Position;
             uniform mat4 u_Transform;
+            uniform mat4 u_ViewMatrix;
+            uniform mat4 u_ProjectionMatrix;
             void main() {
-                gl_Position = u_Transform * a_Position;
+                gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_Transform * a_Position;
             }
         `);
 
@@ -89,7 +91,7 @@ class Triangle {
         gl.bindVertexArray(null);
     }
 
-    draw() {
+    draw(projectionMatrix, viewMatrix) {
         const gl = this.gl;
 
         // Use the program
@@ -102,6 +104,14 @@ class Triangle {
         const u_Transform = gl.getUniformLocation(this.program, 'u_Transform');
         const transformMatrix = this.transform.getMatrix();
         gl.uniformMatrix4fv(u_Transform, false, transformMatrix.elements);
+
+         // Pass the view matrix to the shader
+        const u_ViewMatrix = gl.getUniformLocation(this.program, 'u_ViewMatrix');
+        gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
+
+        // Pass the projection matrix to the shader
+        const u_ProjectionMatrix = gl.getUniformLocation(this.program, 'u_ProjectionMatrix');
+        gl.uniformMatrix4fv(u_ProjectionMatrix, false, projectionMatrix.elements);
 
         // Draw the triangle
         gl.drawArrays(gl.TRIANGLES, 0, 3);
