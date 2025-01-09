@@ -60,8 +60,8 @@ function main() {
 
 
     var mvpMatrix = new Matrix4();
-    mvpMatrix.setPerspective(45, canvas.width/canvas.height, 1 ,100);
-    mvpMatrix.lookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);
+    mvpMatrix.setPerspective(90, canvas.width/canvas.height, 1 ,100);
+    mvpMatrix.lookAt(0, 0, 4, 0, 0, 0, 0, 1, 0);
     gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
 
 
