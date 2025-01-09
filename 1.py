@@ -53,7 +53,7 @@ def apply_perspective_projection(matrix, vector):
     return np.array([x_ndc, y_ndc, z_ndc])
 
 # Example vector and perspective matrix
-vector = np.array([1, 1, 0, 1])  # A 4D point in homogeneous coordinates
+vector = np.array([1, 1, -90, 1])  # A 4D point in homogeneous coordinates
 perspective_matrix = create_perspective_matrix(90, 1, 0.1, 100)
 print(perspective_matrix)
 

@@ -15,22 +15,27 @@ window.onload = function () {
     }
 
     // Set the clear color and enable depth testing
-    gl.clearColor(0.2, 0.2, 0.2, 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // Create the cube object
     const cube = new Cube(gl);
 
-    // View and projection matrices
-    const viewMatrix = new Matrix4();
-    viewMatrix.setLookAt(0, 0, 5, 0, 0, 0, 0, 1, 0);
+    const camera = new Camera();
+    camera.aspect = canvas.width / canvas.height;
 
-    const projMatrix = new Matrix4();
-    projMatrix.setPerspective(45, canvas.width / canvas.height, 1, 100);
+    canvas.addEventListener('mousedown', () => (camera.isDragging = true));
+    canvas.addEventListener('mouseup', () => (camera.isDragging = false));
+    canvas.addEventListener('mousemove', (event) => {
+        if (camera.isDragging) {
+            camera.updateMouse(event.movementX, event.movementY);
+        }
+    });
 
-    const vpMatrix = new Matrix4(projMatrix).multiply(viewMatrix);
+    function render() {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        cube.draw(camera.getProjectionMatrix().multiply(camera.getViewMatrix()));
+        requestAnimationFrame(render);
+    }
 
-    cube.draw(vpMatrix);
-
+    render();
 };
