@@ -11,6 +11,9 @@ class Camera {
         this.aspect = 1; // Aspect ratio (set dynamically later)
         this.near = 0.1; // Near clipping plane
         this.far = 100.0; // Far clipping plane
+        this.zoomSpeed = 0.005; // Speed of zooming
+        this.minDistance = 2; // Minimum zoom distance
+        this.maxDistance = 20; // Maximum zoom distance
     }
 
     getViewMatrix() {
@@ -19,9 +22,9 @@ class Camera {
         const pitchRad = (this.pitch * Math.PI) / 180;
 
         // Spherical coordinates to Cartesian conversion
-        const x = Math.cos(yawRad) * Math.cos(pitchRad) * this.distance;
+        const z = Math.cos(yawRad) * Math.cos(pitchRad) * this.distance;
         const y = Math.sin(pitchRad) * this.distance;
-        const z = Math.sin(yawRad) * Math.cos(pitchRad) * this.distance;
+        const x = Math.sin(yawRad) * Math.cos(pitchRad) * this.distance;
 
 
         // Generate the view matrix using lookAt
@@ -39,10 +42,18 @@ class Camera {
     }
 
     updateMouse(deltaX, deltaY) {
-        this.yaw += deltaX * this.sensitivity;
+        this.yaw -= deltaX * this.sensitivity;
         this.pitch += deltaY * this.sensitivity;
 
         // Clamp the pitch to prevent flipping
         this.pitch = Math.max(-89, Math.min(89, this.pitch));
+    }
+
+     handleMouseWheel(deltaY) {
+        console.log(deltaY);
+        // Update distance based on the wheel delta
+        this.distance += deltaY * this.zoomSpeed;
+        // Clamp the distance to stay within bounds
+        this.distance = Math.max(this.minDistance, Math.min(this.maxDistance, this.distance));
     }
 }

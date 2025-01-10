@@ -30,6 +30,9 @@ window.onload = function () {
             camera.updateMouse(event.movementX, event.movementY);
         }
     });
+    canvas.addEventListener("wheel", (event) => {
+        camera.handleMouseWheel(event.deltaY);
+    });
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
