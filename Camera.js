@@ -43,6 +43,7 @@ class Camera {
 
     updateMouse(deltaX, deltaY) {
         this.yaw -= deltaX * this.sensitivity;
+        this.yaw %= 360;
         this.pitch += deltaY * this.sensitivity;
 
         // Clamp the pitch to prevent flipping

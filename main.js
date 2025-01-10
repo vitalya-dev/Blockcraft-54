@@ -14,6 +14,7 @@ window.onload = function () {
         return;
     }
 
+
     // Set the clear color and enable depth testing
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
@@ -31,8 +32,24 @@ window.onload = function () {
         }
     });
     canvas.addEventListener("wheel", (event) => {
+        event.preventDefault();
         camera.handleMouseWheel(event.deltaY);
     });
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        camera.aspect = canvas.width / canvas.height;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    resizeCanvas();
+
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
