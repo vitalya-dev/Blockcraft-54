@@ -2,10 +2,10 @@ class DrawableObject {
     constructor(gl) {
         this.gl = gl;
         this.transform = new Transform();
+        this.color = [1.0, 1.0, 1.0, 1.0]; // Default color (white)
 
         // Initialize shaders
         this.initShaders();
-        //this.initBuffers();
     }
 
     initShaders() {
@@ -13,20 +13,17 @@ class DrawableObject {
 
         const vsSource = `
             attribute vec4 a_Position;
-            attribute vec4 a_Color;
             uniform mat4 u_MvpMatrix;
-            varying vec4 v_Color;
             void main() {
                 gl_Position = u_MvpMatrix * a_Position;
-                v_Color = a_Color;
             }
         `;
 
         const fsSource = `
             precision mediump float;
-            varying vec4 v_Color;
+            uniform vec4 u_Color;
             void main() {
-                gl_FragColor = v_Color;
+                gl_FragColor = u_Color;
             }
         `;
 
@@ -76,16 +73,6 @@ class DrawableObject {
             gl.enableVertexAttribArray(a_Position);
         }
 
-        if (this.colors) {
-            this.colorBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
-
-            const a_Color = gl.getAttribLocation(this.shaderProgram, 'a_Color');
-            gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(a_Color);
-        }
-
         if (this.indices) {
             this.indexBuffer = gl.createBuffer();
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
@@ -99,12 +86,14 @@ class DrawableObject {
         const gl = this.gl;
 
         const u_MvpMatrix = gl.getUniformLocation(this.shaderProgram, 'u_MvpMatrix');
+        const u_Color = gl.getUniformLocation(this.shaderProgram, 'u_Color');
 
         const modelMatrix = this.transform.getMatrix();
         const mvpMatrix = new Matrix4(vpMatrix).multiply(modelMatrix);
 
         gl.useProgram(this.shaderProgram);
         gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+        gl.uniform4fv(u_Color, this.color);
 
         gl.bindVertexArray(this.vao);
         gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_BYTE, 0);
