@@ -1,4 +1,42 @@
-# Input string
+def parse_obj(input_data):
+    vertices = []
+    normals = []
+    tex_coords = []
+    indices = []
+
+    vertex_array_buffer = []
+    normal_array_buffer = []
+
+    for line in input_data.splitlines():
+        if line.startswith("v "):  # Vertex
+            vertices.append([float(v) for v in line.split()[1:]])
+        elif line.startswith("vn "):  # Vertex normal
+            normals.append([float(vn) for vn in line.split()[1:]])
+        elif line.startswith("f "):  # Face
+            face_indices = line.split()[1:]
+            for vertex in face_indices:
+                v, _, n = [int(idx) - 1 if idx else -1 for idx in vertex.split('/')]
+                vertex_array_buffer.extend(vertices[v])
+                normal_array_buffer.extend(normals[n])
+
+    # Format buffers as JavaScript arrays with one line per vertex/normal
+    def format_array(data, elements_per_line):
+        lines = [
+            ", ".join([f"{data[i + j]:.1f}" for j in range(elements_per_line)])
+            for i in range(0, len(data), elements_per_line)
+        ]
+        return "[\n    " + ",\n    ".join(lines) + "\n]"
+
+    vertex_buffer_js = "this.vertices = new Float32Array(" + format_array(vertex_array_buffer, 3) + ");"
+    normal_buffer_js = "this.normals = new Float32Array(" + format_array(normal_array_buffer, 3) + ");"
+
+    return {
+        "vertex_buffer_js": vertex_buffer_js,
+        "normal_buffer_js": normal_buffer_js,
+    }
+
+
+# Input data
 input_data = """
 v 1.000000 1.000000 -1.000000
 v 1.000000 -1.000000 -1.000000
@@ -43,59 +81,9 @@ f 1/3/5 3/2/5 4/5/5
 f 5/12/6 1/3/6 2/9/6
 """
 
-# Functions to parse components
-def parse_vertices(lines):
-    vertices = []
-    for line in lines:
-        if line.startswith("v "):  # Vertex
-            parts = line.split()[1:]
-            vertices.append(", ".join(map(str, map(float, parts))))
-    return vertices
+# Parse the OBJ data
+result = parse_obj(input_data)
 
-def parse_faces(lines):
-    indices = []
-    for line in lines:
-        if line.startswith("f "):  # Face
-            parts = line.split()[1:]
-            indices.append([int(part.split("/")[0]) - 1 for part in parts])
-    return indices
-
-def parse_normals(lines):
-    normals = []
-    for line in lines:
-        if line.startswith("vn "):  # Normal
-            parts = line.split()[1:]
-            normals.append(", ".join(map(str, map(float, parts))))
-    return normals
-
-def parse_texture_coords(lines):
-    texture_coords = []
-    for line in lines:
-        if line.startswith("vt "):  # Texture Coordinate
-            parts = line.split()[1:]
-            texture_coords.append(", ".join(map(str, map(float, parts))))
-    return texture_coords
-
-# Main parsing function
-def parse_obj(input_data):
-    lines = input_data.strip().splitlines()
-    vertices = parse_vertices(lines)
-    indices = parse_faces(lines)
-    normals = parse_normals(lines)
-    texture_coords = parse_texture_coords(lines)
-    return vertices, indices, normals, texture_coords
-
-# Parse the input data
-vertices, indices, normals, texture_coords = parse_obj(input_data)
-
-# Output formatted data
-print("this.vertices = new Float32Array([\n    " + ",\n    ".join(vertices) + "\n]);")
-
-formatted_indices = ",\n    ".join(", ".join(map(str, triangle)) for triangle in indices)
-print(f"this.indices = new Uint8Array([\n    {formatted_indices}\n]);")
-
-if normals:
-    print("this.normals = new Float32Array([\n    " + ",\n    ".join(normals) + "\n]);")
-
-if texture_coords:
-    print("this.textureCoords = new Float32Array([\n    " + ",\n    ".join(texture_coords) + "\n]);")
+# Print the JavaScript-formatted buffers
+print(result["vertex_buffer_js"])
+print(result["normal_buffer_js"])

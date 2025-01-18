@@ -14,6 +14,7 @@ class DrawableObject {
         const vsSource = `
             attribute vec4 a_Position;
             uniform mat4 u_MvpMatrix;
+            uniform mat4 u_NormalMatrix; // Matrix to transform normals
             void main() {
                 gl_Position = u_MvpMatrix * a_Position;
             }
@@ -73,12 +74,6 @@ class DrawableObject {
             gl.enableVertexAttribArray(a_Position);
         }
 
-        if (this.indices) {
-            this.indexBuffer = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
-        }
-
         gl.bindVertexArray(null);
     }
 
@@ -87,6 +82,7 @@ class DrawableObject {
 
         const u_MvpMatrix = gl.getUniformLocation(this.shaderProgram, 'u_MvpMatrix');
         const u_Color = gl.getUniformLocation(this.shaderProgram, 'u_Color');
+        const u_NormalMatrix = gl.getUniformLocation(this.shaderProgram, 'u_NormalMatrix');
 
         const modelMatrix = this.transform.getMatrix();
         const mvpMatrix = new Matrix4(vpMatrix).multiply(modelMatrix);
@@ -95,8 +91,11 @@ class DrawableObject {
         gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
         gl.uniform4fv(u_Color, this.color);
 
+        const normalMatrix = new Matrix4(modelMatrix).invert().transpose();
+        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
         gl.bindVertexArray(this.vao);
-        gl.drawElements(gl.TRIANGLES, this.indices.length, gl.UNSIGNED_BYTE, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length / 3);
         gl.bindVertexArray(null);
     }
 }
