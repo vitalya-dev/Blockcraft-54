@@ -13,18 +13,47 @@ class DrawableObject {
 
         const vsSource = `
             attribute vec4 a_Position;
+            attribute vec3 a_Normal; // Normal attribute
             uniform mat4 u_MvpMatrix;
+            uniform mat4 u_ModelMatrix; // Model matrix
             uniform mat4 u_NormalMatrix; // Matrix to transform normals
+
+            varying vec3 v_Normal;
+            varying vec3 v_Position;
+
             void main() {
                 gl_Position = u_MvpMatrix * a_Position;
+                v_Normal = mat3(u_NormalMatrix) * a_Normal;
+                v_Position = vec3(u_ModelMatrix * a_Position);
             }
         `;
 
         const fsSource = `
             precision mediump float;
-            uniform vec4 u_Color;
+
+            uniform vec3 u_LightDirection; // Direction of the light source
+            uniform vec3 u_LightColor;     // Color of the light source
+            uniform vec3 u_AmbientColor;   // Ambient light color
+            uniform vec4 u_Color;          // Base color of the object
+
+            varying vec3 v_Normal;
+            varying vec3 v_Position;
+
             void main() {
-                gl_FragColor = u_Color;
+                // Normalize the normal vector
+                vec3 normal = normalize(v_Normal);
+
+                // Calculate the diffuse light intensity
+                float nDotL = max(dot(normal, -u_LightDirection), 0.0);
+                vec3 diffuse = u_LightColor * u_Color.rgb * nDotL;
+
+                // Calculate the ambient light intensity
+                vec3 ambient = u_AmbientColor * u_Color.rgb;
+
+                // Combine the lighting components
+                vec3 finalColor = ambient + diffuse;
+
+                gl_FragColor = vec4(finalColor, u_Color.a);
             }
         `;
 
@@ -74,6 +103,16 @@ class DrawableObject {
             gl.enableVertexAttribArray(a_Position);
         }
 
+        if (this.normals) {
+            this.normalBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, this.normals, gl.STATIC_DRAW);
+
+            const a_Normal = gl.getAttribLocation(this.shaderProgram, 'a_Normal');
+            gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(a_Normal);
+        }
+
         gl.bindVertexArray(null);
     }
 
@@ -83,16 +122,28 @@ class DrawableObject {
         const u_MvpMatrix = gl.getUniformLocation(this.shaderProgram, 'u_MvpMatrix');
         const u_Color = gl.getUniformLocation(this.shaderProgram, 'u_Color');
         const u_NormalMatrix = gl.getUniformLocation(this.shaderProgram, 'u_NormalMatrix');
+        const u_ModelMatrix = gl.getUniformLocation(this.shaderProgram, 'u_ModelMatrix');
+        const u_LightDirection = gl.getUniformLocation(this.shaderProgram, 'u_LightDirection');
+        const u_LightColor = gl.getUniformLocation(this.shaderProgram, 'u_LightColor');
+        const u_AmbientColor = gl.getUniformLocation(this.shaderProgram, 'u_AmbientColor');
+
 
         const modelMatrix = this.transform.getMatrix();
         const mvpMatrix = new Matrix4(vpMatrix).multiply(modelMatrix);
 
         gl.useProgram(this.shaderProgram);
         gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
+        gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
         gl.uniform4fv(u_Color, this.color);
 
         const normalMatrix = new Matrix4(modelMatrix).invert().transpose();
         gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
+
+        gl.uniform3fv(u_LightDirection, [-1, -1, -0]); // Example light direction
+        gl.uniform3fv(u_LightColor, [1.0, 1.0, 1.0]);        // White light
+        gl.uniform3fv(u_AmbientColor, [0.2, 0.2, 0.2]);      // Low ambient light
+
 
         gl.bindVertexArray(this.vao);
         gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length / 3);
