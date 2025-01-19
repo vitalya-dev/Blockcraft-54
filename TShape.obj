@@ -1,43 +1,3 @@
-def parse_obj(input_data):
-    vertices = []
-    normals = []
-    tex_coords = []
-    indices = []
-
-    vertex_array_buffer = []
-    normal_array_buffer = []
-
-    for line in input_data.splitlines():
-        if line.startswith("v "):  # Vertex
-            vertices.append([float(v) for v in line.split()[1:]])
-        elif line.startswith("vn "):  # Vertex normal
-            normals.append([float(vn) for vn in line.split()[1:]])
-        elif line.startswith("f "):  # Face
-            face_indices = line.split()[1:]
-            for vertex in face_indices:
-                v, _, n = [int(idx) - 1 if idx else -1 for idx in vertex.split('/')]
-                vertex_array_buffer.extend(vertices[v])
-                normal_array_buffer.extend(normals[n])
-
-    # Format buffers as JavaScript arrays with one line per vertex/normal
-    def format_array(data, elements_per_line):
-        lines = [
-            ", ".join([f"{data[i + j]:.1f}" for j in range(elements_per_line)])
-            for i in range(0, len(data), elements_per_line)
-        ]
-        return "[\n    " + ",\n    ".join(lines) + "\n]"
-
-    vertex_buffer_js = "this.vertices = new Float32Array(" + format_array(vertex_array_buffer, 3) + ");"
-    normal_buffer_js = "this.normals = new Float32Array(" + format_array(normal_array_buffer, 3) + ");"
-
-    return {
-        "vertex_buffer_js": vertex_buffer_js,
-        "normal_buffer_js": normal_buffer_js,
-    }
-
-
-# Input data
-input_data = """
 # Blender 4.3.2
 # www.blender.org
 mtllib TShape.mtl
@@ -135,11 +95,3 @@ f 19/28/4 20/9/4 17/11/4
 f 14/12/5 18/12/5 17/23/5
 f 15/28/3 19/28/3 18/24/3
 f 13/11/1 17/11/1 20/9/1
-"""
-
-# Parse the OBJ data
-result = parse_obj(input_data)
-
-# Print the JavaScript-formatted buffers
-print(result["vertex_buffer_js"])
-print(result["normal_buffer_js"])

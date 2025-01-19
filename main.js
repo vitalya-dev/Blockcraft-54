@@ -13,14 +13,17 @@ function initialize() {
     camera.pitch = 45;
     camera.distance = 20;
 
-    const box = new Box(gl);
+    const drawables = []; 
+
+    drawables.push(new Box(gl));
+    drawables.push(new TShape(gl));
 
     setupEventListeners(canvas, camera);
     setupResizeHandling(canvas, gl, camera);
 
     resizeCanvas(canvas, gl, camera);
 
-    startRendering(gl, canvas, box, camera);
+    startRendering(gl, canvas, drawables, camera);
 }
 
 function setupCanvas(canvasId) {
@@ -73,13 +76,18 @@ function resizeCanvas(canvas, gl, camera) {
     camera.aspect = canvas.width / canvas.height;
 }
 
-function startRendering(gl, canvas, drawable, camera) {
+function startRendering(gl, canvas, drawables, camera) {
     document.body.style.margin = '0';
     document.body.style.padding = '0';
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        drawable.draw(camera.getProjectionMatrix().multiply(camera.getViewMatrix()));
+        const projectionMatrix = camera.getProjectionMatrix();
+        const viewMatrix = camera.getViewMatrix();
+        const vpMatrix = projectionMatrix.multiply(viewMatrix);
+        for (const drawable of drawables) {
+            drawable.draw(vpMatrix);
+        }
         requestAnimationFrame(render);
     }
 
