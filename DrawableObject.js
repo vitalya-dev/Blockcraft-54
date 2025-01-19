@@ -31,23 +31,26 @@ class DrawableObject {
         const fsSource = `
             precision mediump float;
 
-            uniform vec3 u_LightPosition;  // Position of the point light
+            uniform vec3 u_LightDirection; // Direction of the light
             uniform vec3 u_LightColor;     // Color of the light source
             uniform vec3 u_AmbientColor;   // Ambient light color
             uniform vec4 u_Color;          // Base color of the object
 
             varying vec3 v_Normal;
-            varying vec3 v_Position;
 
             void main() {
                 // Normalize the normal vector
                 vec3 normal = normalize(v_Normal);
+                vec3 lightDirection = normalize(u_LightDirection);
 
-                // Calculate the direction from the fragment to the light source
-                vec3 lightDirection = normalize(u_LightPosition - v_Position);
+                // Calculate the diffuse light intensity (dot product of normal and light direction)
+                float nDotL = max(dot(normal, -lightDirection), 0.0); // Light direction is incoming
 
-                // Calculate the diffuse light intensity
-                float nDotL = max(dot(normal, lightDirection), 0.0);
+                // Quantize the diffuse lighting into discrete levels (toon shading)
+                float levels = 4.0; // Number of discrete shading levels
+                nDotL = floor(nDotL * levels) / levels;
+
+                // Calculate the diffuse color
                 vec3 diffuse = u_LightColor * u_Color.rgb * nDotL;
 
                 // Calculate the ambient light intensity
@@ -59,6 +62,7 @@ class DrawableObject {
                 gl_FragColor = vec4(finalColor, u_Color.a);
             }
         `;
+
 
 
         const vertexShader = this.compileShader(gl.VERTEX_SHADER, vsSource);
@@ -127,7 +131,7 @@ class DrawableObject {
         const u_Color = gl.getUniformLocation(this.shaderProgram, 'u_Color');
         const u_NormalMatrix = gl.getUniformLocation(this.shaderProgram, 'u_NormalMatrix');
         const u_ModelMatrix = gl.getUniformLocation(this.shaderProgram, 'u_ModelMatrix');
-        const u_LightPosition = gl.getUniformLocation(this.shaderProgram, 'u_LightPosition');
+        const u_LightDirection = gl.getUniformLocation(this.shaderProgram, 'u_LightDirection');
         const u_LightColor = gl.getUniformLocation(this.shaderProgram, 'u_LightColor');
         const u_AmbientColor = gl.getUniformLocation(this.shaderProgram, 'u_AmbientColor');
 
@@ -143,7 +147,7 @@ class DrawableObject {
         gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
 
         // Set the point light properties
-        gl.uniform3fv(u_LightPosition, [2.0, 2.0, 2.0]); // Example light position
+        gl.uniform3fv(u_LightDirection, [-1.0, -2.0, -3.0]); // Example light position
         gl.uniform3fv(u_LightColor, [1.0, 1.0, 1.0]);    // White light
         gl.uniform3fv(u_AmbientColor, [0.5, 0.5, 0.5]);  // Low ambient light
 

@@ -9,14 +9,18 @@ function initialize() {
     if (!gl) return;
 
     const camera = setupCamera(canvas);
-    const cube = new Cube(gl);
+    camera.yaw = 45;
+    camera.pitch = 45;
+    camera.distance = 20;
+
+    const box = new Box(gl);
 
     setupEventListeners(canvas, camera);
     setupResizeHandling(canvas, gl, camera);
 
     resizeCanvas(canvas, gl, camera);
 
-    startRendering(gl, canvas, cube, camera);
+    startRendering(gl, canvas, box, camera);
 }
 
 function setupCanvas(canvasId) {
@@ -69,13 +73,13 @@ function resizeCanvas(canvas, gl, camera) {
     camera.aspect = canvas.width / canvas.height;
 }
 
-function startRendering(gl, canvas, cube, camera) {
+function startRendering(gl, canvas, drawable, camera) {
     document.body.style.margin = '0';
     document.body.style.padding = '0';
 
     function render() {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        cube.draw(camera.getProjectionMatrix().multiply(camera.getViewMatrix()));
+        drawable.draw(camera.getProjectionMatrix().multiply(camera.getViewMatrix()));
         requestAnimationFrame(render);
     }
 
