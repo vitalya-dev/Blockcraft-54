@@ -17,6 +17,7 @@ function initialize() {
 
     drawables.push(new Box(gl));
     drawables.push(new TShape(gl));
+    drawables.push(new Floor(gl, 100, 100));
 
     setupEventListeners(canvas, camera);
     setupResizeHandling(canvas, gl, camera);

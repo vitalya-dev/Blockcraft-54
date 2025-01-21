@@ -223,7 +223,7 @@ class TShape extends DrawableObject {
             -1.0, -0.0, -0.0
         ]);
 
-        this.color = [86.0 / 256, 50.0 / 256, 50e.0 / 256, 1.0];
+        this.color = [86.0 / 256, 50.0 / 256, 50.0 / 256, 1.0];
         this.initBuffers();
     }
 }
