@@ -3,6 +3,7 @@ class DrawableObject {
         this.gl = gl;
         this.transform = new Transform();
         this.color = [1.0, 1.0, 1.0, 1.0]; // Default color (white)
+        this.wireframe = false;
 
         // Initialize shaders
         this.initShaders();
@@ -35,10 +36,15 @@ class DrawableObject {
             uniform vec3 u_LightColor;     // Color of the light source
             uniform vec3 u_AmbientColor;   // Ambient light color
             uniform vec4 u_Color;          // Base color of the object
+            uniform int u_Wireframe;   // 1 for wireframe mode, 0 for solid shading
 
             varying vec3 v_Normal;
 
             void main() {
+                if (u_Wireframe == 1) {
+                    gl_FragColor = u_Color;
+                    return;
+                }
                 // Normalize the normal vector
                 vec3 normal = normalize(v_Normal);
                 vec3 lightDirection = normalize(u_LightDirection);
@@ -134,6 +140,7 @@ class DrawableObject {
         const u_LightDirection = gl.getUniformLocation(this.shaderProgram, 'u_LightDirection');
         const u_LightColor = gl.getUniformLocation(this.shaderProgram, 'u_LightColor');
         const u_AmbientColor = gl.getUniformLocation(this.shaderProgram, 'u_AmbientColor');
+        const u_Wireframe = gl.getUniformLocation(this.shaderProgram, 'u_Wireframe');
 
         const modelMatrix = this.transform.getMatrix();
         const mvpMatrix = new Matrix4(vpMatrix).multiply(modelMatrix);
@@ -152,7 +159,15 @@ class DrawableObject {
         gl.uniform3fv(u_AmbientColor, [0.5, 0.5, 0.5]);  // Low ambient light
 
         gl.bindVertexArray(this.vao);
-        gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length / 3);
+
+        if (this.wireframe) {
+            gl.uniform1i(u_Wireframe, 1);
+            gl.drawArrays(gl.LINES, 0, this.vertices.length / 3);
+        } else {
+            gl.uniform1i(u_Wireframe, 0);
+            gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length / 3);
+        }
+
         gl.bindVertexArray(null);
     }
 }
