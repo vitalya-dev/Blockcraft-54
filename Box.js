@@ -1,6 +1,6 @@
 class Box extends DrawableObject {
-    constructor(gl) {
-        super(gl);
+    constructor(gl, id = 0) {
+        super(gl, id);
 
         this.vertices = new Float32Array([
             -3.1, -3.1, -3.0,

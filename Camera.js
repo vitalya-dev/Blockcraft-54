@@ -51,7 +51,6 @@ class Camera {
     }
 
      handleMouseWheel(deltaY) {
-        console.log(deltaY);
         // Update distance based on the wheel delta
         this.distance += deltaY * this.zoomSpeed;
         // Clamp the distance to stay within bounds

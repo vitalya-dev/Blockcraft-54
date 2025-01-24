@@ -1,6 +1,6 @@
 class Floor extends DrawableObject {
-    constructor(gl, dimension = 10, lines = 10) {
-        super(gl);
+    constructor(gl, id = 0, dimension = 10, lines = 10) {
+        super(gl, id);
         
         this.dimension = dimension;  // Size of the grid (e.g., 10x10)
         this.lines = lines;          // Number of lines per axis

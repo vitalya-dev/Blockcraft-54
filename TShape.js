@@ -1,6 +1,6 @@
 class TShape extends DrawableObject {
-    constructor(gl) {
-        super(gl);
+    constructor(gl, id = 0) {
+        super(gl, id);
 
         this.vertices = new Float32Array([
             -1.5, 0.5, 0.0,

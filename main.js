@@ -1,162 +1,188 @@
 // Main.js
-window.onload = initialize;
-
-// Global WebGL context and resources
-let gl;
-let drawables = [];
-let pickingFramebuffer;
-
-function initialize() {
-    const canvas = setupCanvas('webgl');
-    if (!canvas) return;
-
-    gl = setupWebGLContext(canvas);
-    if (!gl) return;
-
-    const camera = setupCamera(canvas);
-    camera.yaw = 45;
-    camera.pitch = 45;
-    camera.distance = 20;
-
-    drawables.push(new Box(gl));
-    drawables.push(new TShape(gl, 1));
-    drawables.push(new Floor(gl, 100, 100));
-
-    resizeCanvas(canvas, gl, camera);
-
-    pickingFramebuffer = createPickingFramebuffer(gl, canvas.width, canvas.height);
-
-    setupEventListeners(canvas, camera);
-    setupResizeHandling(canvas, gl, camera);
-    startRendering(gl, canvas, drawables, camera);
-}
-
-function setupCanvas(canvasId) {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) {
-        console.error(`Failed to retrieve the <canvas> element with ID '${canvasId}'.`);
+class WebGLApp {
+    constructor() {
+        this.canvas = null;
+        this.gl = null;
+        this.camera = null;
+        this.drawables = [];
+        this.pickingFramebuffer = null;
+        
+        window.onload = () => this.initialize();
     }
-    return canvas;
-}
 
-function createFramebuffer(gl, width, height) {
-    const framebuffer = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    initialize() {
+        this.setupCanvas();
+        if (!this.canvas) return;
 
-    const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        this.setupWebGLContext();
+        if (!this.gl) return;
 
-    const depthBuffer = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, depthBuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    return { framebuffer, texture };
-}
-
-function createPickingFramebuffer(gl, width, height) {
-    const framebufferData = createFramebuffer(gl, width, height);
-    return framebufferData;
-}
-
-function setupWebGLContext(canvas) {
-    const gl = canvas.getContext('webgl2');
-    if (!gl) {
-        console.error('Failed to get the rendering context for WebGL.');
-        return null;
+        this.setupCamera();
+        this.createScene();
+        this.setupFramebuffers();
+        this.setupEventListeners();
+        this.setupResizeHandling();
+        this.startRendering();
     }
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.enable(gl.DEPTH_TEST);
-    return gl;
-}
 
-function setupCamera(canvas) {
-    const camera = new Camera();
-    camera.aspect = canvas.width / canvas.height;
-    return camera;
-}
+    setupCanvas() {
+        this.canvas = document.getElementById('webgl');
+        if (!this.canvas) {
+            console.error("Failed to retrieve the <canvas> element with ID 'webgl'.");
+        }
+    }
 
-function setupEventListeners(canvas, camera) {
-    canvas.addEventListener('mousedown', (event) => {
+    setupWebGLContext() {
+        this.gl = this.canvas.getContext('webgl2');
+        if (!this.gl) {
+            console.error('Failed to get WebGL2 context');
+            return;
+        }
+        
+        this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        this.gl.enable(this.gl.DEPTH_TEST);
+    }
+
+    setupCamera() {
+        this.camera = new Camera();
+        this.camera.yaw = 45;
+        this.camera.pitch = 45;
+        this.camera.distance = 20;
+        this.camera.aspect = this.canvas.width / this.canvas.height;
+    }
+
+    createScene() {
+        this.drawables.push(
+            new Box(this.gl),
+            new TShape(this.gl, 1),
+            new Floor(this.gl, 0, 100, 100)
+        );
+    }
+
+    setupFramebuffers() {
+        this.resizeCanvas();
+        this.pickingFramebuffer = this.createFramebuffer();
+    }
+
+    createFramebuffer() {
+        const gl = this.gl;
+        const { width, height } = this.canvas;
+        
+        const framebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+
+        // Create and configure texture
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, 
+                      gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        
+        // Create depth buffer
+        const depthBuffer = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, depthBuffer);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
+        
+        // Attach buffers
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, 
+                              gl.TEXTURE_2D, texture, 0);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, 
+                                 gl.RENDERBUFFER, depthBuffer);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        return { framebuffer, texture };
+    }
+
+    setupEventListeners() {
+        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        this.canvas.addEventListener('mouseup', () => this.camera.isDragging = false);
+        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        this.canvas.addEventListener('wheel', this.handleMouseWheel.bind(this));
+    }
+
+    setupResizeHandling() {
+        window.addEventListener('resize', () => this.resizeCanvas());
+    }
+
+    resizeCanvas() {
+        const { gl, canvas, camera } = this;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        if (gl) {
+            gl.viewport(0, 0, canvas.width, canvas.height);
+            camera.aspect = canvas.width / canvas.height;
+        }
+    }
+
+    startRendering() {
+        document.body.style.margin = '0';
+        document.body.style.padding = '0';
+        this.render();
+    }
+
+    render() {
+        const { gl, camera, drawables } = this;
+        
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        
+        const vpMatrix = camera.getProjectionMatrix()
+                            .multiply(camera.getViewMatrix());
+        
+        drawables.forEach(drawable => drawable.draw(vpMatrix));
+        requestAnimationFrame(() => this.render());
+    }
+
+    handleMouseDown(event) {
         if (event.button === 0) {
-            handlePicking(gl, canvas, event, camera);
+            this.handlePicking(event);
         } else {
             event.preventDefault();
-            camera.isDragging = true;
+            this.camera.isDragging = true;
         }
-    });
-    
-    canvas.addEventListener('mouseup', () => (camera.isDragging = false));
-    canvas.addEventListener('mousemove', (event) => {
-        if (camera.isDragging) {
-            camera.updateMouse(event.movementX, event.movementY);
+    }
+
+    handleMouseMove(event) {
+        if (this.camera.isDragging) {
+            this.camera.updateMouse(event.movementX, event.movementY);
         }
-    });
-    
-    canvas.addEventListener('wheel', (event) => {
+    }
+
+    handleMouseWheel(event) {
         event.preventDefault();
-        camera.handleMouseWheel(event.deltaY);
-    });
-}
+        this.camera.handleMouseWheel(event.deltaY);
+    }
 
-function setupResizeHandling(canvas, gl, camera) {
-    window.addEventListener('resize', () => resizeCanvas(canvas, gl, camera));
-}
+    handlePicking(event) {
+        const { gl, canvas, camera, drawables, pickingFramebuffer } = this;
+        const rect = canvas.getBoundingClientRect();
+        
+        const x = event.clientX - rect.left;
+        const y = rect.bottom - event.clientY;
 
-function resizeCanvas(canvas, gl, camera) {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    camera.aspect = canvas.width / canvas.height;
-}
+        console.log(x, y);
 
-function startRendering(gl, canvas, drawables, camera) {
-    document.body.style.margin = '0';
-    document.body.style.padding = '0';
-
-    function render() {
+        // Render to picking framebuffer
+        gl.bindFramebuffer(gl.FRAMEBUFFER, pickingFramebuffer.framebuffer);
+        gl.viewport(0, 0, canvas.width, canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        const projectionMatrix = camera.getProjectionMatrix();
-        const viewMatrix = camera.getViewMatrix();
-        const vpMatrix = projectionMatrix.multiply(viewMatrix);
-        for (const drawable of drawables) {
-            drawable.draw(vpMatrix);
-        }
-        requestAnimationFrame(render);
-    }
 
-    render();
+        const vpMatrix = camera.getProjectionMatrix()
+                            .multiply(camera.getViewMatrix());
+        
+        drawables.forEach(drawable => drawable.drawPicking(vpMatrix));
+
+        // Read pixel data
+        const pixel = new Uint8Array(4);
+        gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        console.log(pixel[0], pixel[1], pixel[2]);
+
+        const id = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
+        console.log(`Picked object ID: ${id}`);
+    }
 }
 
-
-function handlePicking(gl, canvas, event, camera) {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = rect.bottom - event.clientY;
-
-    // Render to picking framebuffer
-    const projectionMatrix = camera.getProjectionMatrix();
-    const viewMatrix = camera.getViewMatrix();
-    const vpMatrix = projectionMatrix.multiply(viewMatrix);
-
-    gl.bindFramebuffer(gl.FRAMEBUFFER, pickingFramebuffer.framebuffer);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    for (const drawable of drawables) {
-        drawable.drawPicking(vpMatrix);
-    }
-
-    // Read pixel and decode ID
-    const pixel = new Uint8Array(4);
-    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    const id = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
-    console.log(`Picked object ID: ${id}`);
-}
+// Initialize application
+new WebGLApp();
