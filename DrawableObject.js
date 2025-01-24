@@ -1,12 +1,55 @@
 class DrawableObject {
-    constructor(gl) {
+    constructor(gl, id = 0) {
         this.gl = gl;
         this.transform = new Transform();
         this.color = [1.0, 1.0, 1.0, 1.0]; // Default color (white)
         this.wireframe = false;
+        this.pickingColor = this.generatePickingColor(id);
 
         // Initialize shaders
+        this.initPickingShader();
         this.initShaders();
+    }
+
+    generatePickingColor(id) {
+        const r = ((id >> 16) & 0xFF) / 255;
+        const g = ((id >> 8) & 0xFF) / 255;
+        const b = (id & 0xFF) / 255;
+        return [r, g, b, 1.0];
+    }
+
+    initPickingShader() {
+        const gl = this.gl;
+
+        const pickingVsSource = `
+            attribute vec4 a_Position;
+            uniform mat4 u_MvpMatrix;
+
+            void main() {
+                gl_Position = u_MvpMatrix * a_Position;
+            }
+        `;
+
+        const pickingFsSource = `
+            precision mediump float;
+            uniform vec4 u_PickingColor;
+
+            void main() {
+                gl_FragColor = u_PickingColor;
+            }
+        `;
+
+        const vertexShader = this.compileShader(gl.VERTEX_SHADER, pickingVsSource);
+        const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, pickingFsSource);
+
+        this.pickingShaderProgram = gl.createProgram();
+        gl.attachShader(this.pickingShaderProgram, vertexShader);
+        gl.attachShader(this.pickingShaderProgram, fragmentShader);
+        gl.linkProgram(this.pickingShaderProgram);
+
+        if (!gl.getProgramParameter(this.pickingShaderProgram, gl.LINK_STATUS)) {
+            console.error('Could not link picking shaders: ' + gl.getProgramInfoLog(this.pickingShaderProgram));
+        }
     }
 
     initShaders() {
@@ -70,7 +113,6 @@ class DrawableObject {
         `;
 
 
-
         const vertexShader = this.compileShader(gl.VERTEX_SHADER, vsSource);
         const fragmentShader = this.compileShader(gl.FRAGMENT_SHADER, fsSource);
 
@@ -132,41 +174,55 @@ class DrawableObject {
 
     draw(vpMatrix) {
         const gl = this.gl;
+        gl.useProgram(this.shaderProgram);
 
-        const u_MvpMatrix = gl.getUniformLocation(this.shaderProgram, 'u_MvpMatrix');
-        const u_Color = gl.getUniformLocation(this.shaderProgram, 'u_Color');
-        const u_NormalMatrix = gl.getUniformLocation(this.shaderProgram, 'u_NormalMatrix');
-        const u_ModelMatrix = gl.getUniformLocation(this.shaderProgram, 'u_ModelMatrix');
-        const u_LightDirection = gl.getUniformLocation(this.shaderProgram, 'u_LightDirection');
-        const u_LightColor = gl.getUniformLocation(this.shaderProgram, 'u_LightColor');
-        const u_AmbientColor = gl.getUniformLocation(this.shaderProgram, 'u_AmbientColor');
-        const u_Wireframe = gl.getUniformLocation(this.shaderProgram, 'u_Wireframe');
+        // Compute transformation matrices
+        const modelMatrix = this.transform.getMatrix();
+        const mvpMatrix = new Matrix4(vpMatrix).multiply(modelMatrix);
+        const normalMatrix = new Matrix4(modelMatrix).invert().transpose();
 
+        // Set uniforms for normal rendering
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'u_MvpMatrix'), false, mvpMatrix.elements);
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'u_ModelMatrix'), false, modelMatrix.elements);
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, 'u_NormalMatrix'), false, normalMatrix.elements);
+        gl.uniform4fv(gl.getUniformLocation(this.shaderProgram, 'u_Color'), this.color);
+
+        // Set lighting uniforms
+        gl.uniform3fv(gl.getUniformLocation(this.shaderProgram, 'u_LightDirection'), [-1.0, -2.0, -3.0]);
+        gl.uniform3fv(gl.getUniformLocation(this.shaderProgram, 'u_LightColor'), [1.0, 1.0, 1.0]);
+        gl.uniform3fv(gl.getUniformLocation(this.shaderProgram, 'u_AmbientColor'), [0.5, 0.5, 0.5]);
+        gl.uniform1i(gl.getUniformLocation(this.shaderProgram, 'u_Wireframe'), this.wireframe ? 1 : 0);
+
+        // Draw the object
+        this.drawObject();
+    }
+
+
+    drawPicking(vpMatrix) {
+        const gl = this.gl;
+        gl.useProgram(this.pickingShaderProgram);
+
+
+        // Compute transformation matrix
         const modelMatrix = this.transform.getMatrix();
         const mvpMatrix = new Matrix4(vpMatrix).multiply(modelMatrix);
 
-        gl.useProgram(this.shaderProgram);
-        gl.uniformMatrix4fv(u_MvpMatrix, false, mvpMatrix.elements);
-        gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-        gl.uniform4fv(u_Color, this.color);
+        // Set picking uniforms
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.pickingShaderProgram, 'u_MvpMatrix'), false, mvpMatrix.elements);
+        gl.uniform4fv(gl.getUniformLocation(this.pickingShaderProgram, 'u_PickingColor'), this.pickingColor);
 
-        const normalMatrix = new Matrix4(modelMatrix).invert().transpose();
-        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+        // Draw the object for picking
+        this.drawObject();
+    }
 
-        // Set the point light properties
-        gl.uniform3fv(u_LightDirection, [-1.0, -2.0, -3.0]); // Example light position
-        gl.uniform3fv(u_LightColor, [1.0, 1.0, 1.0]);    // White light
-        gl.uniform3fv(u_AmbientColor, [0.5, 0.5, 0.5]);  // Low ambient light
 
+
+    drawObject() {
+        const gl = this.gl;
         gl.bindVertexArray(this.vao);
 
-        if (this.wireframe) {
-            gl.uniform1i(u_Wireframe, 1);
-            gl.drawArrays(gl.LINES, 0, this.vertices.length / 3);
-        } else {
-            gl.uniform1i(u_Wireframe, 0);
-            gl.drawArrays(gl.TRIANGLES, 0, this.vertices.length / 3);
-        }
+        const drawMode = this.wireframe ? gl.LINES : gl.TRIANGLES;
+        gl.drawArrays(drawMode, 0, this.vertices.length / 3);
 
         gl.bindVertexArray(null);
     }
