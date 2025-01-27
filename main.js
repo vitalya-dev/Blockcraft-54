@@ -6,6 +6,11 @@ class WebGLApp {
         this.camera = null;
         this.drawables = [];
         this.pickingFramebuffer = null;
+
+        this.selectedObject = null;
+        this.isDraggingObject = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
         
         window.onload = () => this.initialize();
     }
@@ -54,7 +59,7 @@ class WebGLApp {
     createScene() {
         this.drawables.push(
             new Box(this.gl),
-            new TShape(this.gl, 1),
+            new TShape(this.gl, 5),
             new Floor(this.gl, 0, 100, 100)
         );
     }
@@ -180,6 +185,8 @@ class WebGLApp {
 
         const id = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
         console.log(`Picked object ID: ${id}`);
+        this.selectedObject = this.drawables.find(d => d.id() === id);
+        console.log(this.selectedObject);
     }
 }
 

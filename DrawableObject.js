@@ -76,6 +76,13 @@ class DrawableObject {
         ];
     }
 
+    id() {
+        const r = Math.round(this.pickingColor[0] * 255);
+        const g = Math.round(this.pickingColor[1] * 255);
+        const b = Math.round(this.pickingColor[2] * 255);
+        return (r << 16) | (g << 8) | b;
+    }
+
     initShaders() {
         const [vs, fs] = this.getMainShaderSources();
         this.shaderPrograms.main = this.createShaderProgram(vs, fs);
