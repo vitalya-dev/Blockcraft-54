@@ -98,6 +98,7 @@ class WebGLApp {
         this.canvas.addEventListener('mouseup', () => this.camera.isDragging = false);
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         this.canvas.addEventListener('wheel', this.handleMouseWheel.bind(this));
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     }
 
     setupResizeHandling() {
