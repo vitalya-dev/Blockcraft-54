@@ -31,6 +31,24 @@ class Camera {
         return new Matrix4().lookAt(x, y, z, ...this.target, ...this.up);
     }
 
+    right() {
+        const viewMatrix = this.getViewMatrix();
+        return new Vector3(
+            viewMatrix.elements[0],  // Right vector X component
+            viewMatrix.elements[1],  
+            viewMatrix.elements[2]   // Right vector Z component
+        ).normalize();
+    }
+
+    forward() {
+        const viewMatrix = this.getViewMatrix();
+        return new Vector3(
+            viewMatrix.elements[8],
+            viewMatrix.elements[9],  
+            viewMatrix.elements[10]
+        ).normalize();
+    }
+
     getProjectionMatrix() {
         // Generate a perspective projection matrix
         return new Matrix4().perspective(

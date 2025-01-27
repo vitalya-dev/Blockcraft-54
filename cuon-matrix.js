@@ -708,23 +708,29 @@ var Vector3 = function(opt_src) {
   this.elements = v;
 }
 
+var Vector3 = function(x = 0, y = 0, z = 0) {
+  var v = new Float32Array(3);
+  v[0] = x; v[1] = y; v[2] = z;
+  this.elements = v;
+}
+
 /**
   * Normalize.
   * @return this
   */
-Vector3.prototype.normalize = function() {
+Vector3.prototype.normalize = function () {
   var v = this.elements;
-  var c = v[0], d = v[1], e = v[2], g = Math.sqrt(c*c+d*d+e*e);
-  if(g){
-    if(g == 1)
-        return this;
-   } else {
-     v[0] = 0; v[1] = 0; v[2] = 0;
-     return this;
-   }
-   g = 1/g;
-   v[0] = c*g; v[1] = d*g; v[2] = e*g;
-   return this;
+  var c = v[0], d = v[1], e = v[2], g = Math.sqrt(c * c + d * d + e * e);
+  if (g) {
+    if (g == 1)
+      return this;
+  } else {
+    v[0] = 0; v[1] = 0; v[2] = 0;
+    return this;
+  }
+  g = 1 / g;
+  v[0] = c * g; v[1] = d * g; v[2] = e * g;
+  return this;
 };
 
 /**

@@ -161,7 +161,7 @@ class WebGLApp {
         const x = event.clientX - rect.left;
         const y = rect.bottom - event.clientY;
 
-        console.log(x, y);
+        console.log(camera.right(), camera.forward(), camera.getViewMatrix());
 
         // Render to picking framebuffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, pickingFramebuffer.framebuffer);
@@ -177,8 +177,6 @@ class WebGLApp {
         const pixel = new Uint8Array(4);
         gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-        console.log(pixel[0], pixel[1], pixel[2]);
 
         const id = (pixel[0] << 16) | (pixel[1] << 8) | pixel[2];
         console.log(`Picked object ID: ${id}`);
