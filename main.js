@@ -174,17 +174,25 @@ class WebGLApp {
 
     moveSelectedObject(dx, dy) {
         const right = this.camera.right();
+        right.elements[1] = 0;
         const forward = this.camera.forward();
-        const factor = 500;
+        forward.elements[1] = 0;
 
-        // right.elements[1] = 0;
-        // forward.elements[1] = 0;
+        const sensitivity = 0.002;
+        const scale = this.camera.distance * sensitivity;
+        const deltaX = dx * scale;
+        const deltaY = -dy * scale;
 
-        // // Calculate movement deltas
-        // const deltaX = right.multiply(dx * factor);
-        // const deltaZ = forward.multiply(-dy * factor); // Negative for natural movement
+            // Calculate movement vectors in XZ plane
+        right.elements[0] *= deltaX;
+        right.elements[2] *= deltaX;
 
-        this.selectedObject.transform.translation[0] += dx;
+        forward.elements[0] *= deltaY;
+        forward.elements[2] *= deltaY;
+
+        this.selectedObject.transform.translation[0] += right.elements[0] + forward.elements[0];
+        this.selectedObject.transform.translation[2] += right.elements[2] + forward.elements[2];
+        console.log(right, forward);
     }
 
 
