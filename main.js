@@ -100,7 +100,7 @@ class WebGLApp {
 
     setupEventListeners() {
         this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.canvas.addEventListener('mouseup', () => this.camera.isDragging = false);
+        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
         this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         this.canvas.addEventListener('wheel', this.handleMouseWheel.bind(this));
         this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -142,17 +142,51 @@ class WebGLApp {
     handleMouseDown(event) {
         if (event.button === 0) {
             this.handlePicking(event);
+            if (this.selectedObject) {
+                this.isDraggingObject = true;
+                this.lastMouseX = event.clientX;
+                this.lastMouseY = event.clientY;
+                event.preventDefault();
+            }
         } else {
             event.preventDefault();
             this.camera.isDragging = true;
         }
     }
 
+    handleMouseUp(event) {
+        this.camera.isDragging = false;
+        this.isDraggingObject = false;
+        this.selectedObject = null;
+    }
+
     handleMouseMove(event) {
         if (this.camera.isDragging) {
             this.camera.updateMouse(event.movementX, event.movementY);
+        } else if (this.isDraggingObject && this.selectedObject) {
+            const dx = event.clientX - this.lastMouseX;
+            const dy = event.clientY - this.lastMouseY;
+            this.moveSelectedObject(dx, dy);
+            this.lastMouseX = event.clientX;
+            this.lastMouseY = event.clientY;
         }
     }
+
+    moveSelectedObject(dx, dy) {
+        const right = this.camera.right();
+        const forward = this.camera.forward();
+        const factor = 500;
+
+        // right.elements[1] = 0;
+        // forward.elements[1] = 0;
+
+        // // Calculate movement deltas
+        // const deltaX = right.multiply(dx * factor);
+        // const deltaZ = forward.multiply(-dy * factor); // Negative for natural movement
+
+        this.selectedObject.transform.translation[0] += dx;
+    }
+
 
     handleMouseWheel(event) {
         event.preventDefault();
