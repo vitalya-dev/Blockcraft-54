@@ -6,11 +6,6 @@ class WebGLApp {
         this.camera = null;
         this.drawables = [];
         this.pickingFramebuffer = null;
-
-        this.selectedObject = null;
-        this.isDraggingObject = false;
-        this.lastMouseX = 0;
-        this.lastMouseY = 0;
         
         window.onload = () => this.initialize();
     }
@@ -142,12 +137,7 @@ class WebGLApp {
     handleMouseDown(event) {
         if (event.button === 0) {
             this.handlePicking(event);
-            if (this.selectedObject) {
-                this.isDraggingObject = true;
-                this.lastMouseX = event.clientX;
-                this.lastMouseY = event.clientY;
-                event.preventDefault();
-            }
+            event.preventDefault();
         } else {
             event.preventDefault();
             this.camera.isDragging = true;
@@ -156,43 +146,15 @@ class WebGLApp {
 
     handleMouseUp(event) {
         this.camera.isDragging = false;
-        this.isDraggingObject = false;
         this.selectedObject = null;
     }
 
     handleMouseMove(event) {
         if (this.camera.isDragging) {
             this.camera.updateMouse(event.movementX, event.movementY);
-        } else if (this.isDraggingObject && this.selectedObject) {
-            const dx = event.clientX - this.lastMouseX;
-            const dy = event.clientY - this.lastMouseY;
-            this.moveSelectedObject(dx, dy);
-            this.lastMouseX = event.clientX;
-            this.lastMouseY = event.clientY;
+        } else if (this.selectedObject) {
+            //implement movement
         }
-    }
-
-    moveSelectedObject(dx, dy) {
-        const right = this.camera.right();
-        right.elements[1] = 0;
-        const forward = this.camera.forward();
-        forward.elements[1] = 0;
-
-        const sensitivity = 0.002;
-        const scale = this.camera.distance * sensitivity;
-        const deltaX = dx * scale;
-        const deltaY = -dy * scale;
-
-            // Calculate movement vectors in XZ plane
-        right.elements[0] *= deltaX;
-        right.elements[2] *= deltaX;
-
-        forward.elements[0] *= deltaY;
-        forward.elements[2] *= deltaY;
-
-        this.selectedObject.transform.translation[0] += right.elements[0] + forward.elements[0];
-        this.selectedObject.transform.translation[2] += right.elements[2] + forward.elements[2];
-        console.log(right, forward);
     }
 
 
