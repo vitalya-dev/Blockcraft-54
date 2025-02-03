@@ -84,8 +84,7 @@ function onClick(event) {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   
   raycaster.setFromCamera(mouse, camera);
-  const allChildren = tShapes.flatMap(ts => ts.children);
-  const intersects = raycaster.intersectObjects(allChildren, true);
+  const intersects = raycaster.intersectObjects(tShapes, true);
 
   if (intersects.length > 0) {
     const material = intersects[0].object.material;
@@ -107,8 +106,7 @@ function onMouseMove(event) {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   
   raycaster.setFromCamera(mouse, camera);
-  const allChildren = tShapes.flatMap(ts => ts.children);
-  const intersects = raycaster.intersectObjects(allChildren, true);
+  const intersects = raycaster.intersectObjects(tShapes, true);
   
   handleIntersection(intersects);
 }
