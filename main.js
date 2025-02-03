@@ -1,109 +1,133 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
 import TShape from './TShape.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-camera.position.set(0, 10, 10);
+camera.position.set(0, 15, 20);
 camera.lookAt(0, 0, 0);
 
-// Wood-colored toon material
-const material = new THREE.MeshToonMaterial({
-  color: 0x8B4513, // Classic saddle brown wood color
+// Create multiple T-Shapes
+const tShapes = [];
+const positions = [
+  { x: -8, z: 0 }, { x: 0, z: 0 }, { x: 8, z: 0 },
+  { x: -4, z: 8 }, { x: 4, z: 8 }
+];
+
+positions.forEach(pos => {
+  const material = new THREE.MeshToonMaterial({
+    color: 0x8B4513,
+    emissive: 0x000000
+  });
+  const tShape = new TShape(material);
+  tShape.position.set(pos.x, 0, pos.z);
+  scene.add(tShape);
+  tShapes.push(tShape);
 });
 
-  // 0xA0522D (sienna)
-
-  // 0xDEB887 (burlywood)
-
-  // 0xD2B48C (tan)
-
-  // 0xCD853F (peru)
-
-
-// Add lighting for toon shading
+// Lighting
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(5, 5, 5);
 scene.add(directionalLight);
 
-
-const tShape = new TShape(material);
-scene.add(tShape);
-
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xeeeeee); // Light background to enhance contrast
+renderer.setClearColor(0xeeeeee);
 document.body.appendChild(renderer.domElement);
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let currentTarget = new THREE.Vector3(); // Store original center
+let lastHoveredMaterial = null;
 
-
+// Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.screenSpacePanning = true; // More intuitive panning
-controls.maxPolarAngle = Math.PI/2; // Prevent looking under the puzzle
-controls.target.copy(tShape.position); // Initial target
-currentTarget.copy(controls.target);
-// controls.enableDamping = true; // Smooth camera movement
-// controls.dampingFactor = 0.05;
-// controls.minDistance = 5; // Minimum zoom
-// controls.maxDistance = 20; // Maximum zoom
-// controls.enablePan = true; // Allow camera panning
+controls.screenSpacePanning = true;
+controls.maxPolarAngle = Math.PI/2;
+controls.target.set(0, 0, 0);
 
-const gridHelper = new THREE.GridHelper(1000, 1000);
+// Grid Helper
+const gridHelper = new THREE.GridHelper(40, 40);
 scene.add(gridHelper);
 
-
-// Click handler
-function onClick(event) {
-    // Calculate mouse position in normalized device coordinates
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Update the picking ray
-    raycaster.setFromCamera(mouse, camera);
-
-    // Find intersected objects (assuming TShape creates meshes)
-    const intersects = raycaster.intersectObjects(tShape.children, true);
-
-    if (intersects.length > 0) {
-        // const distance = controls.getDistance();
-        //  // Calculate direction vector
-        // const direction = new THREE.Vector3()
-        //     .subVectors(camera.position, controls.target)
-        //     .normalize();
-
-        tShape.material.emissive.setHex(0x333333);
-        setTimeout(() => {
-          tShape.material.emissive.setHex(0x000000);
-        }, 200);
-        controls.target.copy(tShape.getWorldPosition(new THREE.Vector3()));
-
-        //camera.position.copy(controls.target).add(direction.multiplyScalar(distance));
-        // const selectedObject = intersects[0].object;
-        
-        // // Focus on the clicked TShape piece
-        // controls.target.copy(selectedObject.getWorldPosition(new THREE.Vector3()));
-        // currentTarget.copy(controls.target);
-        
-        // // Optional: Add visual feedback
-        // selectedObject.material.emissive.setHex(0x333333);
-        // setTimeout(() => {
-        //     selectedObject.material.emissive.setHex(0x000000);
-        // }, 200);
+// Event Handlers
+// Define a function named `handleIntersection` that takes a parameter `intersects`
+function handleIntersection(intersects) {
+  // Check if the `intersects` array has any elements (i.e., if there are intersections)
+  if (intersects.length > 0) {
+    // Retrieve the material of the first intersected object from the `intersects` array
+    const material = intersects[0].object.material;
+    // Check if the current material is different from the previously hovered material (`lastHoveredMaterial`)
+    if (material !== lastHoveredMaterial) {
+      // If there was a previously hovered material, reset its emissive color to black (0x000000)
+      if (lastHoveredMaterial) {
+        lastHoveredMaterial.emissive.setHex(0x000000);
+      }
+      // Set the emissive color of the current material to a grayish color (0x444444)
+      material.emissive.setHex(0x444444);
+      // Update the `lastHoveredMaterial` to the current material for future reference
+      lastHoveredMaterial = material;
     }
+  } else {
+    // If there are no intersections (i.e., the user is not hovering over any object)
+    // Check if there was a previously hovered material
+    if (lastHoveredMaterial) {
+      // Reset the emissive color of the previously hovered material to black (0x000000)
+      lastHoveredMaterial.emissive.setHex(0x000000);
+      // Clear the reference to the previously hovered material by setting it to null
+      lastHoveredMaterial = null;
+    }
+  }
 }
 
-renderer.domElement.addEventListener('click', onClick, false);
+function onClick(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+  raycaster.setFromCamera(mouse, camera);
+  const allChildren = tShapes.flatMap(ts => ts.children);
+  const intersects = raycaster.intersectObjects(allChildren, true);
 
+  if (intersects.length > 0) {
+    const material = intersects[0].object.material;
+    const tShape = intersects[0].object.parent;
+    
+    material.emissive.setHex(0x666666);
+    setTimeout(() => {
+      if (material !== lastHoveredMaterial) {
+        material.emissive.setHex(0x000000);
+      }
+    }, 200);
 
-// Simplified animation loop without rotation
+    controls.target.copy(tShape.getWorldPosition(new THREE.Vector3()));
+  }
+}
+
+function onMouseMove(event) {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+  raycaster.setFromCamera(mouse, camera);
+  const allChildren = tShapes.flatMap(ts => ts.children);
+  const intersects = raycaster.intersectObjects(allChildren, true);
+  
+  handleIntersection(intersects);
+}
+
+renderer.domElement.addEventListener('click', onClick);
+renderer.domElement.addEventListener('mousemove', onMouseMove);
+
+// Animation Loop
 const animate = () => {
-    requestAnimationFrame(animate);
-    controls.update(); // Required when damping is enabled
-    renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
 };
 
 animate();
+
+// Window Resize Handler
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
