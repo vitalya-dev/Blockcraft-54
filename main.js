@@ -49,70 +49,84 @@ controls.target.set(0, 0, 0);
 const gridHelper = new THREE.GridHelper(40, 40);
 scene.add(gridHelper);
 
-// Event Handlers
-// Define a function named `handleIntersection` that takes a parameter `intersects`
-function handleIntersection(intersects) {
-  // Check if the `intersects` array has any elements (i.e., if there are intersections)
-  if (intersects.length > 0) {
-    // Retrieve the material of the first intersected object from the `intersects` array
-    const material = intersects[0].object.material;
-    // Check if the current material is different from the previously hovered material (`lastHoveredMaterial`)
-    if (material !== lastHoveredMaterial) {
-      // If there was a previously hovered material, reset its emissive color to black (0x000000)
-      if (lastHoveredMaterial) {
-        lastHoveredMaterial.emissive.setHex(0x000000);
-      }
-      // Set the emissive color of the current material to a grayish color (0x444444)
-      material.emissive.setHex(0x444444);
-      // Update the `lastHoveredMaterial` to the current material for future reference
-      lastHoveredMaterial = material;
-    }
-  } else {
-    // If there are no intersections (i.e., the user is not hovering over any object)
-    // Check if there was a previously hovered material
-    if (lastHoveredMaterial) {
-      // Reset the emissive color of the previously hovered material to black (0x000000)
-      lastHoveredMaterial.emissive.setHex(0x000000);
-      // Clear the reference to the previously hovered material by setting it to null
-      lastHoveredMaterial = null;
-    }
-  }
-}
+// Dragging variables
+let selectedObject = null;
+let offset = new THREE.Vector3();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-function onClick(event) {
+function onMouseDown(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
+
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(tShapes, true);
 
   if (intersects.length > 0) {
-    const material = intersects[0].object.material;
-    const tShape = intersects[0].object.parent;
-    
-    material.emissive.setHex(0x666666);
-    setTimeout(() => {
-      if (material !== lastHoveredMaterial) {
-        material.emissive.setHex(0x000000);
-      }
-    }, 200);
+    selectedObject = intersects[0].object.parent; // Adjust based on your TShape structure
+    controls.enabled = false;
 
-    controls.target.copy(tShape.getWorldPosition(new THREE.Vector3()));
+    // Calculate initial intersection point on ground plane
+    const intersectionPoint = new THREE.Vector3();
+    raycaster.ray.intersectPlane(groundPlane, intersectionPoint);
+    offset.copy(selectedObject.position).sub(intersectionPoint);
   }
 }
 
 function onMouseMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(tShapes, true);
-  
-  handleIntersection(intersects);
+
+  if (selectedObject) {
+    // Handle dragging
+    raycaster.setFromCamera(mouse, camera);
+    const newIntersection = new THREE.Vector3();
+    
+    if (raycaster.ray.intersectPlane(groundPlane, newIntersection)) {
+      const newPosition = newIntersection.add(offset);
+      
+      // Snap to grid (1 unit increments matching grid helper)
+      const gridSize = 1;
+      newPosition.x = Math.round(newPosition.x / gridSize) * gridSize;
+      newPosition.z = Math.round(newPosition.z / gridSize) * gridSize;
+      
+      selectedObject.position.copy(newPosition);
+    }
+  } else {
+    // Handle hover effect
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(tShapes, true);
+    handleIntersection(intersects);
+  }
 }
 
-renderer.domElement.addEventListener('click', onClick);
+function onMouseUp() {
+  if (selectedObject) {
+    controls.enabled = true;
+    selectedObject = null;
+  }
+}
+
+// Update event listeners
+renderer.domElement.addEventListener('mousedown', onMouseDown);
 renderer.domElement.addEventListener('mousemove', onMouseMove);
+renderer.domElement.addEventListener('mouseup', onMouseUp);
+
+// Keep your existing hover handling function
+function handleIntersection(intersects) {
+  if (intersects.length > 0) {
+    const material = intersects[0].object.material;
+    if (material !== lastHoveredMaterial) {
+      if (lastHoveredMaterial) lastHoveredMaterial.emissive.setHex(0x000000);
+      material.emissive.setHex(0x444444);
+      lastHoveredMaterial = material;
+    }
+  } else {
+    if (lastHoveredMaterial) {
+      lastHoveredMaterial.emissive.setHex(0x000000);
+      lastHoveredMaterial = null;
+    }
+  }
+}
 
 // Animation Loop
 const animate = () => {
