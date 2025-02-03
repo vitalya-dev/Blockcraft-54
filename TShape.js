@@ -1,6 +1,9 @@
-class TShape extends THREE.Group {
+import * as THREE from 'three';
+
+export default class TShape extends THREE.Group {
   constructor(material) {
     super();
+    this.material = material;
     const positions = [
       [0, 0, 0],  // Center
       [1, 0, 0],  // Right
