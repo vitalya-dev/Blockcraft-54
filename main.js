@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import TShape from './TShape.js';
+import TransformControls from './TransformControls.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-camera.position.set(0, 15, 20);
+camera.position.set(0, 0, 20);
 camera.lookAt(0, 0, 0);
 
 // Create multiple T-Shapes
@@ -24,6 +25,11 @@ positions.forEach(pos => {
   scene.add(tShape);
   tShapes.push(tShape);
 });
+
+// Add after tShapes array declaration
+const transformControls = new TransformControls();
+scene.add(transformControls);
+transformControls.visible = false;
 
 // Lighting
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -59,22 +65,45 @@ function onMouseDown(event) {
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
+
+  // First check for transform controls interaction
+  if (transformControls.visible) {
+    const gizmoIntersects = raycaster.intersectObjects(transformControls.children, true);
+    if (gizmoIntersects.length > 0) {
+      const intersect = gizmoIntersects[0];
+      if (transformControls.handleMouseDown(intersect)) {
+        controls.enabled = false;
+        selectedObject = null; // Prevent object dragging
+        return; // Exit early to avoid object selection
+      }
+    }
+  }
+
+  // Then check for object selection
   const intersects = raycaster.intersectObjects(tShapes, true);
-
   if (intersects.length > 0) {
-    selectedObject = intersects[0].object.parent; // Adjust based on your TShape structure
+    selectedObject = intersects[0].object.parent;
     controls.enabled = false;
+    transformControls.attach(selectedObject);
 
-    // Calculate initial intersection point on ground plane
+    // Calculate initial drag offset
     const intersectionPoint = new THREE.Vector3();
     raycaster.ray.intersectPlane(groundPlane, intersectionPoint);
     offset.copy(selectedObject.position).sub(intersectionPoint);
+  } else {
+    transformControls.detach();
   }
 }
 
 function onMouseMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // Handle rotation first
+  if (transformControls.rotateActive) {
+    transformControls.handleMouseMove(event, camera);
+    return; // Skip other interactions
+  }
 
   if (selectedObject) {
     // Handle dragging
@@ -84,7 +113,7 @@ function onMouseMove(event) {
     if (raycaster.ray.intersectPlane(groundPlane, newIntersection)) {
       const newPosition = newIntersection.add(offset);
       
-      // Snap to grid (1 unit increments matching grid helper)
+      // Snap to grid
       const gridSize = 1;
       newPosition.x = Math.round(newPosition.x / gridSize) * gridSize;
       newPosition.z = Math.round(newPosition.z / gridSize) * gridSize;
@@ -104,6 +133,7 @@ function onMouseUp() {
     controls.enabled = true;
     selectedObject = null;
   }
+  transformControls.handleMouseUp();
 }
 
 // Update event listeners
@@ -132,6 +162,11 @@ function handleIntersection(intersects) {
 const animate = () => {
   requestAnimationFrame(animate);
   controls.update();
+  if (transformControls.targetObject) {
+    transformControls.position.copy(transformControls.targetObject.position);
+    transformControls.rotation.copy(transformControls.targetObject.rotation);
+    transformControls.updateMatrixWorld();
+  }
   renderer.render(scene, camera);
 };
 
