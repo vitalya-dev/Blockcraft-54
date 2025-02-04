@@ -11,64 +11,43 @@ export default class TransformControls extends THREE.Group {
   }
 
   createGizmos() {
-    // Create properly oriented rings for each axis
     this.createAxisRing('x', 0xff0000); // Red X-axis ring (YZ plane)
     this.createAxisRing('y', 0x00ff00); // Green Y-axis ring (XZ plane)
     this.createAxisRing('z', 0x0000ff); // Blue Z-axis ring (XY plane)
   }
 
   createAxisRing(axis, color) {
-    const ringGeometry = new THREE.CircleGeometry(this.axisSize, 32);
-    
+    // Create a single ring geometry with thickness
+    const ringGeometry = new THREE.RingGeometry(
+      this.axisSize - 0.1,  // Inner radius
+      this.axisSize + 0.1,  // Outer radius
+      32                    // Segments
+    );
+
     // Orient the geometry based on axis
     switch(axis) {
       case 'x':
-        // Rotate to YZ plane (perpendicular to X-axis)
-        ringGeometry.rotateY(Math.PI/2);
+        ringGeometry.rotateY(Math.PI/2); // YZ plane
         break;
       case 'y':
-        // Rotate to XZ plane (perpendicular to Y-axis)
-        ringGeometry.rotateX(Math.PI/2);
-        break;
-      case 'z':
+        ringGeometry.rotateX(Math.PI/2); // XZ plane
         break;
       // Z-axis remains in XY plane by default
     }
 
-    // Visible ring
     const ringMaterial = new THREE.MeshBasicMaterial({
       color: color,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.5
     });
-    
+
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.userData.axis = axis;
-    
-    // Invisible picker geometry
-    const pickerGeometry = new THREE.RingGeometry(
-      this.axisSize - 0.1, 
-      this.axisSize + 0.1, 
-      32
-    );
-    const pickerMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.0
-    });
-    
-    // Apply same orientation to picker
-    pickerGeometry.copy(ringGeometry);
-    const picker = new THREE.Mesh(pickerGeometry, pickerMaterial);
-    picker.userData.axis = axis;
-    
     this.add(ring);
-    this.add(picker);
   }
 
-  // Updated rotation handling with proper axis alignment
+  // Keep the rest of the methods unchanged
   handleMouseMove(event, camera) {
     if (!this.rotateActive || !this.targetObject) return;
 
@@ -78,18 +57,17 @@ export default class TransformControls extends THREE.Group {
 
     switch(this.selectedAxis) {
       case 'x':
-        this.targetObject.rotateX(deltaY); // Local X-axis
+        this.targetObject.rotateX(deltaY);
         break;
       case 'y':
-        this.targetObject.rotateY(deltaX); // Local Y-axis
+        this.targetObject.rotateY(deltaX);
         break;
       case 'z':
-        this.targetObject.rotateZ(deltaY); // Local Z-axis
+        this.targetObject.rotateZ(deltaY);
         break;
     }
   }
 
-  // Keep other methods the same
   attach(object) {
     this.targetObject = object;
     this.visible = true;
