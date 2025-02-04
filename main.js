@@ -129,10 +129,8 @@ function onMouseMove(event) {
 }
 
 function onMouseUp() {
-  if (selectedObject) {
-    controls.enabled = true;
-    selectedObject = null;
-  }
+  controls.enabled = true;
+  selectedObject = null;
   transformControls.handleMouseUp();
 }
 
