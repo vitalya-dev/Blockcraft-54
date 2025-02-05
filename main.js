@@ -1,74 +1,208 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
-
 import TShape from './TShape.js';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-camera.position.set(0, 0, 20);
-camera.lookAt(0, 0, 0);
+// Configuration constants
+const CONFIG = {
+  CAMERA: {
+    FOV: 75,
+    POSITION: new THREE.Vector3(0, 0, 20),
+    NEAR: 0.1,
+    FAR: 1000
+  },
+  RENDERER: {
+    CLEAR_COLOR: 0xeeeeee,
+    ANTIALIAS: true
+  },
+  LIGHTING: {
+    DIRECTIONAL: {
+      COLOR: 0xffffff,
+      INTENSITY: 0.8,
+      POSITION: new THREE.Vector3(5, 5, 5)
+    }
+  },
+  GRID: {
+    SIZE: 40,
+    DIVISIONS: 40
+  },
+  T_SHAPES: {
+    MATERIAL: {
+      COLOR: 0x8B4513,
+      EMISSIVE: 0x000000
+    },
+    POSITIONS: [
+      { x: -8, z: 0 }, { x: 0, z: 0 }, { x: 8, z: 0 },
+      { x: -4, z: 8 }, { x: 4, z: 8 }
+    ]
+  },
+  CONTROLS: {
+    TRANSFORM: {
+      TRANSLATION_SNAP: 1,
+      ROTATION_SNAP: 90 // Degrees
+    }
+  }
+};
 
+class SceneManager {
+  constructor() {
+    this.scene = new THREE.Scene();
+    this.camera = this.createCamera();
+    this.renderer = this.createRenderer();
+    this.orbitControls = null;
+    this.transformControls = null;
+    this.tShapes = [];
+    
+    this.init();
+  }
 
-// Lighting
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 5, 5);
-scene.add(directionalLight);
+  init() {
+    this.setupLighting();
+    this.setupGrid();
+    this.createTShapes();
+    this.setupControls();
+    this.setupEventListeners();
+    this.render();
+  }
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0xeeeeee);
-document.body.appendChild(renderer.domElement);
+  createCamera() {
+    const camera = new THREE.PerspectiveCamera(
+      CONFIG.CAMERA.FOV,
+      window.innerWidth / window.innerHeight,
+      CONFIG.CAMERA.NEAR,
+      CONFIG.CAMERA.FAR
+    );
+    camera.position.copy(CONFIG.CAMERA.POSITION);
+    camera.lookAt(0, 0, 0);
+    return camera;
+  }
 
-// Orbit Controls
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.screenSpacePanning = true;
-controls.maxPolarAngle = Math.PI/2;
-controls.target.set(0, 0, 0);
-controls.addEventListener( 'change', render );
+  createRenderer() {
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: CONFIG.RENDERER.ANTIALIAS 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(CONFIG.RENDERER.CLEAR_COLOR);
+    document.body.appendChild(renderer.domElement);
+    return renderer;
+  }
 
-// Grid Helper
-const gridHelper = new THREE.GridHelper(40, 40);
-scene.add(gridHelper);
+  setupLighting() {
+    const light = new THREE.DirectionalLight(
+      CONFIG.LIGHTING.DIRECTIONAL.COLOR,
+      CONFIG.LIGHTING.DIRECTIONAL.INTENSITY
+    );
+    light.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
+    this.scene.add(light);
+  }
 
-// Create multiple T-Shapes
-// Create multiple T-Shapes
-const tShapes = [
-  { x: -8, z: 0 }, { x: 0, z: 0 }, { x: 8, z: 0 },
-  { x: -4, z: 8 }, { x: 4, z: 8 }
-].map(pos => {
-  const material = new THREE.MeshToonMaterial({
-    color: 0x8B4513,
-    emissive: 0x000000
-  });
-  const tShape = new TShape(material);
-  tShape.position.set(pos.x, 0, pos.z);
-  scene.add(tShape);
-  return tShape;
-});
+  setupGrid() {
+    const gridHelper = new THREE.GridHelper(
+      CONFIG.GRID.SIZE,
+      CONFIG.GRID.DIVISIONS
+    );
+    this.scene.add(gridHelper);
+  }
 
-// Setup Transform Controls
-const transformControls = new TransformControls(camera, renderer.domElement);
+  createTShapes() {
+    const material = new THREE.MeshToonMaterial({
+      color: CONFIG.T_SHAPES.MATERIAL.COLOR,
+      emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
+    });
 
-// When dragging an object with TransformControls, disable OrbitControls
-transformControls.addEventListener('dragging-changed', (event) => {
-  controls.enabled = !event.value;
-});
+    this.tShapes = CONFIG.T_SHAPES.POSITIONS.map(pos => {
+      const tShape = new TShape(material);
+      tShape.position.set(pos.x, 0, pos.z);
+      this.scene.add(tShape);
+      return tShape;
+    });
+  }
 
-let selectedObject = tShapes[0];
-transformControls.attach(selectedObject);
-transformControls.addEventListener( 'change', render );
+  setupControls() {
+    // Orbit Controls
+    this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.orbitControls.screenSpacePanning = true;
+    this.orbitControls.maxPolarAngle = Math.PI / 2;
+    this.orbitControls.target.set(0, 0, 0);
+    this.orbitControls.addEventListener('change', () => this.render());
 
-const gizmo = transformControls.getHelper();
-scene.add( gizmo );
+    // Transform Controls
+    this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+    this.transformControls.setTranslationSnap(CONFIG.CONTROLS.TRANSFORM.TRANSLATION_SNAP);
+    this.transformControls.setRotationSnap(THREE.MathUtils.degToRad(
+      CONFIG.CONTROLS.TRANSFORM.ROTATION_SNAP
+    ));
+    
+    this.transformControls.addEventListener('dragging-changed', (event) => {
+      this.orbitControls.enabled = !event.value;
+    });
+    
+    this.transformControls.addEventListener('change', () => this.render());
+    this.scene.add(this.transformControls.getHelper());
+  }
 
-transformControls.setTranslationSnap( 1 );
-transformControls.setRotationSnap( THREE.MathUtils.degToRad( 90 ) );
+  setupEventListeners() {
+    window.addEventListener('resize', () => this.onWindowResize());
+    this.renderer.domElement.addEventListener('click', (event) => this.onDocumentMouseClick(event));
+  }
 
-// Animation Loop
+  onDocumentMouseClick(event) {
+    console.log(event);
+    // Calculate normalized mouse coordinates
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
+    mouse.y = - (event.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
 
-function render() {
+    // Set up raycaster
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
 
-  renderer.render( scene, camera );
+    // First check if we're clicking on the transform gizmo itself
+    const gizmoHelper = this.transformControls.getHelper();
+    if (gizmoHelper.visible) {
+      // Collect all visible meshes in the gizmo hierarchy
+      const visibleGizmoMeshes = [];
+      gizmoHelper.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.visible && child.material.visible) {
+          visibleGizmoMeshes.push(child);
+        }
+      });
 
+      // Check intersections with visible gizmo elements only
+      const gizmoIntersects = raycaster.intersectObjects(visibleGizmoMeshes, true);
+      if (gizmoIntersects.length > 0) {
+        return; // Exit if clicking on visible gizmo elements
+      }
+    }
+
+    // Get all child meshes of TShapes
+    const intersects = raycaster.intersectObjects(this.tShapes, true);
+
+    let selectedObject = null;
+    if (intersects.length > 0) {
+      selectedObject = intersects[0].object.parent;
+    }
+
+    // Attach or detach transform controls
+    if (selectedObject) {
+      this.transformControls.attach(selectedObject);
+    } else {
+      this.transformControls.detach();
+    }
+    this.render();
+  }
+
+  onWindowResize() {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.render();
+  }
+
+  render() {
+    this.renderer.render(this.scene, this.camera);
+  }
 }
+
+// Initialize the application
+new SceneManager();
