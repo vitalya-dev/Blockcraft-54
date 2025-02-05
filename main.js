@@ -147,7 +147,6 @@ class SceneManager {
   }
 
   onDocumentMouseClick(event) {
-    console.log(event);
     // Calculate normalized mouse coordinates
     const mouse = new THREE.Vector2();
     mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
@@ -156,24 +155,6 @@ class SceneManager {
     // Set up raycaster
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.camera);
-
-    // First check if we're clicking on the transform gizmo itself
-    const gizmoHelper = this.transformControls.getHelper();
-    if (gizmoHelper.visible) {
-      // Collect all visible meshes in the gizmo hierarchy
-      const visibleGizmoMeshes = [];
-      gizmoHelper.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.visible && child.material.visible) {
-          visibleGizmoMeshes.push(child);
-        }
-      });
-
-      // Check intersections with visible gizmo elements only
-      const gizmoIntersects = raycaster.intersectObjects(visibleGizmoMeshes, true);
-      if (gizmoIntersects.length > 0) {
-        return; // Exit if clicking on visible gizmo elements
-      }
-    }
 
     // Get all child meshes of TShapes
     const intersects = raycaster.intersectObjects(this.tShapes, true);
@@ -186,9 +167,7 @@ class SceneManager {
     // Attach or detach transform controls
     if (selectedObject) {
       this.transformControls.attach(selectedObject);
-    } else {
-      this.transformControls.detach();
-    }
+    } 
     this.render();
   }
 
