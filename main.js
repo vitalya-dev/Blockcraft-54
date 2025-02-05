@@ -139,7 +139,6 @@ renderer.domElement.addEventListener('mousedown', onMouseDown);
 renderer.domElement.addEventListener('mousemove', onMouseMove);
 renderer.domElement.addEventListener('mouseup', onMouseUp);
 
-// Keep your existing hover handling function
 function handleIntersection(intersects) {
   if (intersects.length > 0) {
     const material = intersects[0].object.material;
