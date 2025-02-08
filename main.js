@@ -144,7 +144,20 @@ class SceneManager {
   setupEventListeners() {
     window.addEventListener('resize', () => this.onWindowResize());
     this.renderer.domElement.addEventListener('click', (event) => this.onDocumentMouseClick(event));
-  }
+    this.renderer.domElement.addEventListener('dblclick', (event) => {
+    // Only toggle if an object is currently attached to the transform controls.
+      if (this.transformControls.object) {
+        if (this.transformControls.mode === 'translate') {
+          this.transformControls.setMode('rotate');
+          console.log("Double-click: Mode switched to rotate");
+        } else {
+          this.transformControls.setMode('translate');
+          console.log("Double-click: Mode switched to translate");
+        }
+        this.render();
+      }
+  });
+}
 
   onDocumentMouseClick(event) {
     // Calculate normalized mouse coordinates
