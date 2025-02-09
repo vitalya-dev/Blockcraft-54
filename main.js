@@ -52,6 +52,10 @@ class SceneManager {
     this.orbitControls = null;
     this.transformControls = null;
     this.tShapes = [];
+
+    // Variables to track pointer movement for click/drag detection
+    this.isDragging = false;
+    this.mouseDown = null;
     
     this.init();
   }
@@ -147,9 +151,32 @@ class SceneManager {
 
   setupEventListeners() {
     window.addEventListener('resize', () => this.onWindowResize());
+
+    // Pointer events to distinguish a click from a drag (orbit)
+    this.renderer.domElement.addEventListener('pointerdown', (event) => {
+      this.mouseDown = { x: event.clientX, y: event.clientY };
+      this.isDragging = false;
+    });
+
+    this.renderer.domElement.addEventListener('pointermove', (event) => {
+      if (!this.mouseDown) return;
+      const dx = event.clientX - this.mouseDown.x;
+      const dy = event.clientY - this.mouseDown.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 2) { // Movement threshold (in pixels)
+        this.isDragging = true;
+      }
+    });
+
+    this.renderer.domElement.addEventListener('pointerup', () => {
+      this.mouseDown = null;
+    });
+
+    // Click event for selection/deselection
     this.renderer.domElement.addEventListener('click', (event) => this.onDocumentMouseClick(event));
+
+    // Double-click event for toggling between translate and rotate modes
     this.renderer.domElement.addEventListener('dblclick', (event) => {
-    // Only toggle if an object is currently attached to the transform controls.
+      // Only toggle if an object is currently attached
       if (this.transformControls.object) {
         if (this.transformControls.mode === 'translate') {
           this.transformControls.setMode('rotate');
@@ -162,10 +189,13 @@ class SceneManager {
         }
         this.render();
       }
-  });
-}
+    });
+  }
 
   onDocumentMouseClick(event) {
+    // If the mouse was dragged (for orbiting), ignore this click event
+    if (this.isDragging) return;
+
     // Calculate normalized mouse coordinates
     const mouse = new THREE.Vector2();
     mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
@@ -186,7 +216,9 @@ class SceneManager {
     // Attach or detach transform controls
     if (selectedObject) {
       this.transformControls.attach(selectedObject);
-    } 
+    } else {
+      this.transformControls.detach();
+    }
     this.render();
   }
 
