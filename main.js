@@ -192,7 +192,8 @@ class SceneManager {
     let clickedObject = null;
     if (intersects.length > 0) {
       // Assuming the mesh is a child of TShape, use its parent as the selectable object.
-      clickedObject = intersects[0].object.parent;
+      if (intersects[0].object.tshape) 
+        clickedObject = intersects[0].object.tshape;
     }
 
     // If no object was clicked, detach transform controls and reset mode to translate.
