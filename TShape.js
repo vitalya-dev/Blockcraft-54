@@ -33,4 +33,34 @@ export default class TShape extends THREE.Group {
       this.add(box);
     });
   }
+
+  // Method to handle selection and toggle transform modes
+  onSelect(transformControls) {
+    // If this TShape is already attached to the gizmo, toggle modes.
+    if (transformControls.object === this) {
+      if (transformControls.mode === 'translate') {
+        transformControls.setMode('rotate');
+        transformControls.showY = true; // Show Y-axis for rotation if needed
+        console.log("Toggled to rotate mode for", this.name);
+      } else {
+        transformControls.setMode('translate');
+        transformControls.showY = false;
+        console.log("Toggled to translate mode for", this.name);
+      }
+    } else {
+      // Attach this TShape to the transform controls in translate mode.
+      transformControls.attach(this);
+      transformControls.setMode('translate');
+      transformControls.showY = false;
+      console.log("Selected", this.name, "in translate mode");
+    }
+  }
+  
+  // Optional: You could add a deselection method if needed.
+  onDeselect(transformControls) {
+    if (transformControls.object === this) {
+      transformControls.detach();
+      console.log("Deselected", this.name);
+    }
+  }
 }

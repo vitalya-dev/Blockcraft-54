@@ -190,10 +190,8 @@ class SceneManager {
     const intersects = raycaster.intersectObjects(this.tShapes, true);
 
     let clickedObject = null;
-    if (intersects.length > 0) {
-      // Assuming the mesh is a child of TShape, use its parent as the selectable object.
-      if (intersects[0].object.tshape) 
-        clickedObject = intersects[0].object.tshape;
+    if (intersects.length > 0 && intersects[0].object.tshape) {
+      clickedObject = intersects[0].object.tshape;
     }
 
     // If no object was clicked, detach transform controls and reset mode to translate.
@@ -202,24 +200,8 @@ class SceneManager {
       this.transformControls.setMode('translate');
       this.transformControls.showY = false;
       console.log("Deselected object. Reverting to default transform mode (translate).");
-    }
-    // If the clicked object is already attached, toggle its mode.
-    else if (this.transformControls.object === clickedObject) {
-      if (this.transformControls.mode === 'translate') {
-        this.transformControls.setMode('rotate');
-        this.transformControls.showY = true;
-        console.log("Single click toggle: Mode switched to rotate");
-      } else {
-        this.transformControls.setMode('translate');
-        this.transformControls.showY = false;
-        console.log("Single click toggle: Mode switched to translate");
-      }
     } else {
-      // A new object was clicked: attach it and set to default (translate) mode.
-      this.transformControls.attach(clickedObject);
-      this.transformControls.setMode('translate');
-      this.transformControls.showY = false;
-      console.log("Single click: New object selected in translate mode");
+      clickedObject.onSelect(this.transformControls);
     }
     this.render();
   }
