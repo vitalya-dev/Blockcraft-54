@@ -173,58 +173,52 @@ class SceneManager {
 
     // Click event for selection/deselection
     this.renderer.domElement.addEventListener('click', (event) => this.onDocumentMouseClick(event));
-
-    // Double-click event for toggling between translate and rotate modes
-    this.renderer.domElement.addEventListener('dblclick', (event) => {
-      // Only toggle if an object is currently attached
-      if (this.transformControls.object) {
-        if (this.transformControls.mode === 'translate') {
-          this.transformControls.setMode('rotate');
-          this.transformControls.showY = true;
-          console.log("Double-click: Mode switched to rotate");
-        } else {
-          this.transformControls.setMode('translate');
-          this.transformControls.showY = false;
-          console.log("Double-click: Mode switched to translate");
-        }
-        this.render();
-      }
-    });
   }
 
   onDocumentMouseClick(event) {
-    // If the mouse was dragged (for orbiting), ignore this click event
+    // If the pointer was dragged (for orbiting), ignore the click event
     if (this.isDragging) return;
 
     // Calculate normalized mouse coordinates
     const mouse = new THREE.Vector2();
     mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
-    mouse.y = - (event.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
+    mouse.y = -(event.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
 
-    // Set up raycaster
+    // Set up the raycaster and test for intersections with TShape meshes
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.camera);
-
-    // Get all child meshes of TShapes
     const intersects = raycaster.intersectObjects(this.tShapes, true);
 
-    let selectedObject = null;
+    let clickedObject = null;
     if (intersects.length > 0) {
-      selectedObject = intersects[0].object.parent;
+      // Assuming the mesh is a child of TShape, use its parent as the selectable object.
+      clickedObject = intersects[0].object.parent;
     }
 
-    if (this.transformControls.mode !== 'translate') {
+    // If no object was clicked, detach transform controls and reset mode to translate.
+    if (!clickedObject) {
+      this.transformControls.detach();
       this.transformControls.setMode('translate');
       this.transformControls.showY = false;
-      console.log("Resetting transform mode to translate");
+      console.log("Deselected object. Reverting to default transform mode (translate).");
     }
-
-
-    // Attach or detach transform controls
-    if (selectedObject) {
-      this.transformControls.attach(selectedObject);
+    // If the clicked object is already attached, toggle its mode.
+    else if (this.transformControls.object === clickedObject) {
+      if (this.transformControls.mode === 'translate') {
+        this.transformControls.setMode('rotate');
+        this.transformControls.showY = true;
+        console.log("Single click toggle: Mode switched to rotate");
+      } else {
+        this.transformControls.setMode('translate');
+        this.transformControls.showY = false;
+        console.log("Single click toggle: Mode switched to translate");
+      }
     } else {
-      this.transformControls.detach();
+      // A new object was clicked: attach it and set to default (translate) mode.
+      this.transformControls.attach(clickedObject);
+      this.transformControls.setMode('translate');
+      this.transformControls.showY = false;
+      console.log("Single click: New object selected in translate mode");
     }
     this.render();
   }
