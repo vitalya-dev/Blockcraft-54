@@ -132,6 +132,10 @@ class SceneManager {
     this.transformControls.setRotationSnap(THREE.MathUtils.degToRad(
       CONFIG.CONTROLS.TRANSFORM.ROTATION_SNAP
     ));
+    // Restrict translation to XZ initially
+    this.transformControls.showX = true;
+    this.transformControls.showY = false; // Hide Y-axis
+    this.transformControls.showZ = true;
     
     this.transformControls.addEventListener('dragging-changed', (event) => {
       this.orbitControls.enabled = !event.value;
@@ -149,9 +153,11 @@ class SceneManager {
       if (this.transformControls.object) {
         if (this.transformControls.mode === 'translate') {
           this.transformControls.setMode('rotate');
+          this.transformControls.showY = true;
           console.log("Double-click: Mode switched to rotate");
         } else {
           this.transformControls.setMode('translate');
+          this.transformControls.showY = false;
           console.log("Double-click: Mode switched to translate");
         }
         this.render();
