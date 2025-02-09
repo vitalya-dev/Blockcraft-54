@@ -213,6 +213,13 @@ class SceneManager {
       selectedObject = intersects[0].object.parent;
     }
 
+    if (this.transformControls.mode !== 'translate') {
+      this.transformControls.setMode('translate');
+      this.transformControls.showY = false;
+      console.log("Resetting transform mode to translate");
+    }
+
+
     // Attach or detach transform controls
     if (selectedObject) {
       this.transformControls.attach(selectedObject);
