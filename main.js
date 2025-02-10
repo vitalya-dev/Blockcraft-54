@@ -138,12 +138,7 @@ class SceneManager {
     this.transformControls.setTranslationSnap(CONFIG.CONTROLS.TRANSFORM.TRANSLATION_SNAP);
     this.transformControls.setRotationSnap(THREE.MathUtils.degToRad(
       CONFIG.CONTROLS.TRANSFORM.ROTATION_SNAP
-    ));
-    // Restrict translation to XZ initially
-    this.transformControls.showX = true;
-    this.transformControls.showY = false; // Hide Y-axis
-    this.transformControls.showZ = true;
-    
+    ));    
     // When dragging starts/stops, update orbit controls and our dragging flag.
     this.transformControls.addEventListener('dragging-changed', (event) => {
       this.orbitControls.enabled = !event.value;
@@ -240,7 +235,6 @@ class SceneManager {
       }
       this.transformControls.detach();
       this.transformControls.setMode('translate');
-      this.transformControls.showY = false;
     } else {
       clickedObject.onSelect(this.transformControls);
     }
@@ -251,7 +245,6 @@ class SceneManager {
   // If a collision is found, lift the dragged object upward by one unit (repeat until there is no collision).
   handleCollision() {
     const dragged = this.transformControls.object;
-    console.log("GetOccupiedCells:" + JSON.stringify(dragged.getOccupiedCells()));
   }
 
   onWindowResize() {

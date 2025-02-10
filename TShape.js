@@ -22,13 +22,13 @@ export default class TShape extends THREE.Group {
       box.tshape = this;
       
       // Create edges geometry for the box
-      const edgesGeometry = new THREE.EdgesGeometry(geometry);
-      const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-      const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
-      edges.tshape = this;
+      // const edgesGeometry = new THREE.EdgesGeometry(geometry);
+      // const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+      // const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+      // edges.tshape = this;
       
       // Add the edges as a child of the box so that they follow its transform
-      box.add(edges);
+      //box.add(edges);
       
       // Add the box (with its edges) to the TShape group
       this.add(box);
@@ -64,7 +64,6 @@ export default class TShape extends THREE.Group {
       // Attach this TShape to the transform controls in translate mode.
       transformControls.attach(this);
       transformControls.setMode('translate');
-      transformControls.showY = false;
       // Apply the selection highlight.
       this.highlightSelected();
       this.isSelected = true;
@@ -75,10 +74,8 @@ export default class TShape extends THREE.Group {
   toggleTransformMode(transformControls) {
     if (transformControls.mode === 'translate') {
       transformControls.setMode('rotate');
-      transformControls.showY = true; // Show Y-axis for rotation if needed
     } else {
       transformControls.setMode('translate');
-      transformControls.showY = false;
     }
   }
   
