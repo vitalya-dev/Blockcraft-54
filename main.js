@@ -52,6 +52,7 @@ class SceneManager {
     this.orbitControls = null;
     this.transformControls = null;
     this.tShapes = [];
+    this.hoveredTShape = null; // Track the currently hovered TShape
 
     // Variables to track pointer movement for click/drag detection
     this.isDragging = false;
@@ -109,12 +110,11 @@ class SceneManager {
   }
 
   createTShapes() {
-    const material = new THREE.MeshToonMaterial({
-      color: CONFIG.T_SHAPES.MATERIAL.COLOR,
-      emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
-    });
-
     this.tShapes = CONFIG.T_SHAPES.POSITIONS.map(pos => {
+      const material = new THREE.MeshToonMaterial({
+        color: CONFIG.T_SHAPES.MATERIAL.COLOR,
+        emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
+      });
       const tShape = new TShape(material);
       tShape.position.set(pos.x, 0, pos.z);
       this.scene.add(tShape);
@@ -167,6 +167,35 @@ class SceneManager {
       }
     });
 
+    // ----------------- Hover Detection -----------------
+    this.renderer.domElement.addEventListener('pointermove', (event) => {
+      // Calculate normalized mouse coordinates
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / this.renderer.domElement.clientWidth) * 2 - 1;
+      mouse.y = -(event.clientY / this.renderer.domElement.clientHeight) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.camera);
+      const intersects = raycaster.intersectObjects(this.tShapes, true);
+
+      let intersectedTShape = null;
+      if (intersects.length > 0 && intersects[0].object.tshape) {
+        intersectedTShape = intersects[0].object.tshape;
+      }
+
+      // Update hover state if the currently hovered TShape has changed.
+      if (intersectedTShape !== this.hoveredTShape) {
+        if (this.hoveredTShape) {
+          this.hoveredTShape.onHoverExit();
+        }
+        if (intersectedTShape) {
+          intersectedTShape.onHoverEnter();
+        }
+        this.hoveredTShape = intersectedTShape;
+        this.render();
+      }
+    });
+
     this.renderer.domElement.addEventListener('pointerup', () => {
       this.mouseDown = null;
     });
@@ -196,6 +225,9 @@ class SceneManager {
 
     // If no object was clicked, detach transform controls and reset mode to translate.
     if (!clickedObject) {
+      if (this.transformControls.object && typeof this.transformControls.object.onDeselect === 'function') {
+        this.transformControls.object.onDeselect(this.transformControls);
+      }
       this.transformControls.detach();
       this.transformControls.setMode('translate');
       this.transformControls.showY = false;
