@@ -57,6 +57,9 @@ class SceneManager {
     // Variables to track pointer movement for click/drag detection
     this.isDragging = false;
     this.mouseDown = null;
+
+    // Flag to know when the transform controls are actively dragging an object.
+    this.isTransformDragging = false;
     
     this.init();
   }
@@ -141,11 +144,18 @@ class SceneManager {
     this.transformControls.showY = false; // Hide Y-axis
     this.transformControls.showZ = true;
     
+    // When dragging starts/stops, update orbit controls and our dragging flag.
     this.transformControls.addEventListener('dragging-changed', (event) => {
       this.orbitControls.enabled = !event.value;
+      this.isTransformDragging = event.value;
     });
     
-    this.transformControls.addEventListener('change', () => this.render());
+    this.transformControls.addEventListener('change', () => {
+      if (this.isTransformDragging) {
+        this.handleCollision();
+      }
+      this.render();
+    });
     this.scene.add(this.transformControls.getHelper());
   }
 
@@ -231,11 +241,17 @@ class SceneManager {
       this.transformControls.detach();
       this.transformControls.setMode('translate');
       this.transformControls.showY = false;
-      console.log("Deselected object. Reverting to default transform mode (translate).");
     } else {
       clickedObject.onSelect(this.transformControls);
     }
     this.render();
+  }
+
+  //Check for collision between the dragged TShape and all other TShapes.
+  // If a collision is found, lift the dragged object upward by one unit (repeat until there is no collision).
+  handleCollision() {
+    const dragged = this.transformControls.object;
+    console.log("GetOccupiedCells:" + JSON.stringify(dragged.getOccupiedCells()));
   }
 
   onWindowResize() {

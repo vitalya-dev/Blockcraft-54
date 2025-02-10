@@ -35,6 +35,22 @@ export default class TShape extends THREE.Group {
     });
   }
 
+  getOccupiedCells() {
+    const cells = [];
+    // For each child (box) of the group, determine its world position.
+    this.children.forEach(child => {
+      const worldPos = new THREE.Vector3();
+      child.getWorldPosition(worldPos);
+      // Because our shapes snap by one, round the world coordinates.
+      const gridX = Math.round(worldPos.x);
+      const gridY = Math.round(worldPos.y);
+      const gridZ = Math.round(worldPos.z);
+      cells.push({ x: gridX, y: gridY, z: gridZ });
+    });
+    return cells;
+  }
+
+
   // Method to handle selection and toggle transform modes
   onSelect(transformControls) {
     if (transformControls.object === this) {
@@ -49,7 +65,6 @@ export default class TShape extends THREE.Group {
       transformControls.attach(this);
       transformControls.setMode('translate');
       transformControls.showY = false;
-      console.log("Selected", this.name, "in translate mode");
       // Apply the selection highlight.
       this.highlightSelected();
       this.isSelected = true;
@@ -61,11 +76,9 @@ export default class TShape extends THREE.Group {
     if (transformControls.mode === 'translate') {
       transformControls.setMode('rotate');
       transformControls.showY = true; // Show Y-axis for rotation if needed
-      console.log(`Toggled to rotate mode for ${this.name}`);
     } else {
       transformControls.setMode('translate');
       transformControls.showY = false;
-      console.log(`Toggled to translate mode for ${this.name}`);
     }
   }
   
@@ -73,7 +86,6 @@ export default class TShape extends THREE.Group {
   onDeselect(transformControls) {
     if (transformControls.object === this) {
       transformControls.detach();
-      console.log("Deselected", this.name);
       this.removeHighlight();
       this.isSelected = false;
     }
@@ -120,7 +132,6 @@ export default class TShape extends THREE.Group {
    * In this example, we set the emissive color to yellow.
    */
   highlightSelected() {
-    console.log("highlightSelected");
     this.traverse(child => {
       if (child instanceof THREE.Mesh) {
         if (child.material && 'emissive' in child.material) {
@@ -135,7 +146,6 @@ export default class TShape extends THREE.Group {
    * This resets the emissive color back to the original value (black).
    */
   removeHighlight() {
-    console.log("removeHighlight");
     this.traverse(child => {
       if (child instanceof THREE.Mesh) {
         if (child.material && 'emissive' in child.material) {
