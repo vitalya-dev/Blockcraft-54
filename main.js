@@ -31,10 +31,7 @@ const CONFIG = {
       COLOR: 0x8B4513,
       EMISSIVE: 0x000000
     },
-    POSITIONS: [
-      { x: -8, z: 0 }, { x: 0, z: 0 }, { x: 8, z: 0 },
-      { x: -4, z: 8 }, { x: 4, z: 8 }
-    ]
+    COUNT: 54  // new property for the number of T-shapes
   },
   CONTROLS: {
     TRANSFORM: {
@@ -113,16 +110,47 @@ class SceneManager {
   }
 
   createTShapes() {
-    this.tShapes = CONFIG.T_SHAPES.POSITIONS.map(pos => {
+    const count = CONFIG.T_SHAPES.COUNT;
+    const spread = 5;   // horizontal spread for x and z
+    const maxHeight = 3; // maximum y height for initial placement
+
+    // Get snapping values from the config.
+    const translationSnap = CONFIG.CONTROLS.TRANSFORM.TRANSLATION_SNAP;
+    const rotationSnapDeg = CONFIG.CONTROLS.TRANSFORM.ROTATION_SNAP;
+    const rotationSnapRad = THREE.MathUtils.degToRad(rotationSnapDeg);
+
+    for (let i = 0; i < count; i++) {
       const material = new THREE.MeshToonMaterial({
         color: CONFIG.T_SHAPES.MATERIAL.COLOR,
         emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
       });
       const tShape = new TShape(material);
-      tShape.position.set(pos.x, 0, pos.z);
+
+      // Generate raw positions.
+      const rawPosX = (Math.random() - 0.5) * spread;
+      const rawPosZ = (Math.random() - 0.5) * spread;
+      const rawPosY = Math.random() * maxHeight;
+
+      // Snap positions by rounding to the nearest translationSnap unit.
+      const posX = Math.round(rawPosX / translationSnap) * translationSnap + 15;
+      const posZ = Math.round(rawPosZ / translationSnap) * translationSnap + 15;
+      const posY = Math.round(rawPosY / translationSnap) * translationSnap;
+      tShape.position.set(posX, posY, posZ);
+
+      // Generate raw rotations.
+      const rawRotX = Math.random() * 3 * Math.PI;
+      const rawRotY = Math.random() * 3 * Math.PI;
+      const rawRotZ = Math.random() * 3 * Math.PI;
+
+      // Snap rotations by rounding to the nearest rotationSnap increment.
+      const rotX = Math.round(rawRotX / rotationSnapRad) * rotationSnapRad;
+      const rotY = Math.round(rawRotY / rotationSnapRad) * rotationSnapRad;
+      const rotZ = Math.round(rawRotZ / rotationSnapRad) * rotationSnapRad;
+      tShape.rotation.set(rotX, rotY, rotZ);
+
       this.scene.add(tShape);
-      return tShape;
-    });
+      this.tShapes.push(tShape);
+    }
   }
 
   setupControls() {
