@@ -10,7 +10,7 @@ export default class TShape extends THREE.Group {
       [0, 0, 0],  // Center
       [1, 0, 0],  // Right
       [-1, 0, 0], // Left
-      [0, 1, 0]   // Top
+      [0, 0, -1]   // Top
     ];
     
     positions.forEach(pos => {
@@ -53,52 +53,22 @@ export default class TShape extends THREE.Group {
 
 
   // Method to handle selection and toggle transform modes
-  onSelect(transformControls) {
-    if (transformControls.object === this) {
-      // Toggle the transform mode if this object is already selected.
-      this.toggleTransformMode(transformControls);
-    } else {
-      // Deselect previously selected TShape if there is one.
-      if (transformControls.object && typeof transformControls.object.onDeselect === 'function') {
-        transformControls.object.onDeselect(transformControls);
-      }
-      // Attach this TShape to the transform controls in translate mode.
-      transformControls.attach(this);
-      transformControls.setMode('translate');
-      // Apply the selection highlight.
-      this.highlightSelected();
-      this.isSelected = true;
-    }
+  onSelect() {
+    //TODO
   }
 
-    // Helper method to toggle transform modes.
-  toggleTransformMode(transformControls) {
-    if (transformControls.mode === 'translate') {
-      transformControls.setMode('rotate');
-    } else {
-      transformControls.setMode('translate');
-    }
-  }
   
   // Optional: You could add a deselection method if needed.
-  onDeselect(transformControls) {
-    if (transformControls.object === this) {
-      transformControls.detach();
-      this.removeHighlight();
-      this.isSelected = false;
-    }
+  onDeselect() {
+
   }
 
   onHoverEnter() {
-    if (this.isSelected) return;
     this.traverse(child => {
       if (child instanceof THREE.Mesh) {
         // If the material supports an emissive property, use it for the hover effect.
         if (child.material && 'emissive' in child.material) {
           child.material.emissive.set(0x555555);
-        } else if (child.material && child.material.color) {
-          // Fallback: Change the color slightly.
-          //child.material.color.set(0xaaaaaa);
         }
       }
     });
@@ -109,15 +79,11 @@ export default class TShape extends THREE.Group {
    * For example, this can be triggered when the pointer leaves the object.
    */
   onHoverExit() {
-    if (this.isSelected) return;
     this.traverse(child => {
       if (child instanceof THREE.Mesh) {
         if (child.material && 'emissive' in child.material) {
           // Reset the emissive color (assuming the original emissive is black).
           child.material.emissive.set(0x000000);
-        } else if (child.material && child.material.color) {
-          // Reset the color (assuming the original color is white).
-          //child.material.color.set(0xffffff);
         }
       }
     });
