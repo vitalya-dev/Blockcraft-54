@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import TShape from './TShape.js';
+import SelectionController from './SelectionController.js';
 
 // Configuration constants
 const CONFIG = {
@@ -40,6 +41,7 @@ class SceneManager {
     this.scene = new THREE.Scene();
     this.camera = this.createCamera();
     this.renderer = this.createRenderer();
+    this.selectionController = null;
     this.tShapes = [];  
     this.init();
   }
@@ -106,7 +108,8 @@ class SceneManager {
   }
 
   setupControls() {
-    //TODO
+    this.selectionController = new SelectionController(this.camera, this.scene, this.renderer, this.tShapes);
+    this.selectionController.addEventListener('change', () => this.render());
   }
 
   setupEventListeners() {

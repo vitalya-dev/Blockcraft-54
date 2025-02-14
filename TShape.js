@@ -5,7 +5,6 @@ export default class TShape extends THREE.Group {
     super();
     this.name = "TShape";
     this.material = material;
-    this.isSelected = false;
     const positions = [
       [0, 0, 0],  // Center
       [1, 0, 0],  // Right
@@ -51,18 +50,6 @@ export default class TShape extends THREE.Group {
     return cells;
   }
 
-
-  // Method to handle selection and toggle transform modes
-  onSelect() {
-    //TODO
-  }
-
-  
-  // Optional: You could add a deselection method if needed.
-  onDeselect() {
-
-  }
-
   onHoverEnter() {
     this.traverse(child => {
       if (child instanceof THREE.Mesh) {
@@ -95,7 +82,7 @@ export default class TShape extends THREE.Group {
    * Call this method when the TShape is selected to highlight it.
    * In this example, we set the emissive color to yellow.
    */
-  highlightSelected() {
+  highlight() {
     this.traverse(child => {
       if (child instanceof THREE.Mesh) {
         if (child.material && 'emissive' in child.material) {
