@@ -31,6 +31,8 @@ class SelectionController extends THREE.EventDispatcher {
     // Bind event listeners.
     this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false);
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false);
+    this.renderer.domElement.addEventListener('wheel', this.onWheel.bind(this), false);
+    this.renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault(), false);
   }
 
   // Helper: update mouse coordinates and raycaster, then return intersections with provided objects.
@@ -67,15 +69,27 @@ class SelectionController extends THREE.EventDispatcher {
   }
 
   // Toggle selection on mouse down.
-  onMouseDown(event) {
+onMouseDown(event) {
     event.preventDefault();
 
-    // Check what selectable object (if any) is under the mouse.
+    // Right mouse button rotates the selected object around its y-axis.
+    if (event.button === 2) { // RMB
+      if (this.selected) {
+        const angleStep = Math.PI / 2; // 90° in radians.
+        // Snap to the nearest multiple of 90°.
+        this.selected.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -angleStep);
+        //this.selected.rotation.y = Math.round(this.selected.rotation.y / angleStep) * angleStep;
+        this.dispatchEvent({ type: 'change' });
+      }
+      return; // Skip further processing for RMB.
+    }
+
+    // For left mouse button (LMB): toggle selection.
     const intersects = this.getIntersects(event, this.selectableObjects);
     const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
 
     if (!this.selected) {
-      // No object currently selected – try to select one.
+      // No object selected – try to select one.
       if (selectableUnderMouse) {
         this.selected = selectableUnderMouse;
         this.selected.highlight();
@@ -112,6 +126,7 @@ class SelectionController extends THREE.EventDispatcher {
     }
   }
 
+
   // While moving the mouse, if an object is selected, update its position.
   onMouseMove(event) {
     event.preventDefault();
@@ -135,6 +150,25 @@ class SelectionController extends THREE.EventDispatcher {
       this.selected.position.copy(newPosition);
       this.dispatchEvent({ type: 'change' });
     }
+  }
+
+    // Listen for wheel events to rotate the selected object around its x-axis.
+  // Rotates in 90° increments.
+  onWheel(event) {
+    event.preventDefault();
+    if (!this.selected) return;
+
+    const angleStep = Math.PI / 2; // 90° in radians.
+    // Determine direction: scroll up (negative deltaY) rotates one way, down (positive) the other.
+    const delta = event.deltaY > 0 ? 1 : -1;
+    
+    // Update rotation along x-axis.
+    this.selected.rotation.x += delta * angleStep;
+    
+    // Snap to the nearest multiple of 90°.
+    this.selected.rotation.x = Math.round(this.selected.rotation.x / angleStep) * angleStep;
+
+    this.dispatchEvent({ type: 'change' });
   }
 }
 

@@ -91,6 +91,7 @@ class SceneManager {
       CONFIG.GRID.SIZE,
       CONFIG.GRID.DIVISIONS
     );
+    gridHelper.position.set(0.5, 0, 0.5);
     this.scene.add(gridHelper);
   }
 
