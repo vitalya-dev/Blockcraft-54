@@ -31,7 +31,6 @@ class SelectionController extends THREE.EventDispatcher {
     // Bind event listeners.
     this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false);
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false);
-    this.renderer.domElement.addEventListener('mouseup', this.onMouseUp.bind(this), false);
   }
 
   // Helper: update mouse coordinates and raycaster, then return intersections with provided objects.
@@ -67,108 +66,74 @@ class SelectionController extends THREE.EventDispatcher {
     return null;
   }
 
-  // When the player clicks, check if a selectable TShape was clicked.
+  // Toggle selection on mouse down.
   onMouseDown(event) {
     event.preventDefault();
-    console.log("[DEBUG] onMouseDown triggered:", event);
 
+    // Check what selectable object (if any) is under the mouse.
     const intersects = this.getIntersects(event, this.selectableObjects);
-    console.log("[DEBUG] Intersects:", intersects);
+    const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
 
-    if (intersects.length > 0) {
-      const intersect = intersects[0];
-      console.log("[DEBUG] First intersect:", intersect);
-
-      const selectable = this.findSelectable(intersect.object);
-      console.log("[DEBUG] Selectable object found:", selectable);
-
-      if (selectable) {
-        this.selected = selectable;
-
+    if (!this.selected) {
+      // No object currently selected – try to select one.
+      if (selectableUnderMouse) {
+        this.selected = selectableUnderMouse;
         this.selected.highlight();
-        // Determine the offset so that the object doesn’t snap abruptly.
         const planeIntersect = this.getPlaneIntersection(event);
         if (planeIntersect) {
-          console.log("[DEBUG] Plane intersection:", planeIntersect);
+          // Calculate offset to avoid snapping.
           this.offset.copy(planeIntersect.point).sub(this.selected.position);
-          console.log("[DEBUG] Computed offset:", this.offset);
-        } else {
-          console.log("[DEBUG] No plane intersection found.");
         }
-        // Dispatch a change event after lifting the object.
         this.dispatchEvent({ type: 'change' });
-      } else {
-        console.log("[DEBUG] No selectable object found for the intersected object.");
       }
     } else {
-      console.log("[DEBUG] No intersects found.");
+      // An object is already selected.
+      if (selectableUnderMouse === this.selected) {
+        // Clicking the same object releases the selection.
+        this.selected.removeHighlight();
+        this.selected = null;
+        this.dispatchEvent({ type: 'change' });
+      } else if (selectableUnderMouse && selectableUnderMouse !== this.selected) {
+        // Clicking a different selectable: switch selection.
+        this.selected.removeHighlight();
+        this.selected = selectableUnderMouse;
+        this.selected.highlight();
+        const planeIntersect = this.getPlaneIntersection(event);
+        if (planeIntersect) {
+          this.offset.copy(planeIntersect.point).sub(this.selected.position);
+        }
+        this.dispatchEvent({ type: 'change' });
+      } else {
+        // Clicked on empty space – release the current selection.
+        this.selected.removeHighlight();
+        this.selected = null;
+        this.dispatchEvent({ type: 'change' });
+      }
     }
   }
 
-
-  // While dragging, update the object's position so that it follows the mouse.
-  // The new position is calculated with the provided snippet, then snapped to whole numbers.
+  // While moving the mouse, if an object is selected, update its position.
   onMouseMove(event) {
     event.preventDefault();
-    console.log("[DEBUG] onMouseMove triggered with event:", event);
 
     if (!this.selected) {
-      console.log("[DEBUG] No object is currently selected. Exiting onMouseMove.");
       return;
     }
 
     const planeIntersect = this.getPlaneIntersection(event);
     if (planeIntersect) {
-      console.log("[DEBUG] Plane intersection found:", planeIntersect);
-      
       const newPosition = new THREE.Vector3();
-      // Using provided snippet:
+      // Using your provided snippet:
       newPosition.copy(planeIntersect.point).add(planeIntersect.face.normal);
-      console.log("[DEBUG] Position after adding face normal:", newPosition);
-
-      // Adjust by the initial offset.
       newPosition.sub(this.offset);
-      console.log("[DEBUG] Position after subtracting offset:", newPosition);
 
       // Snap to the nearest whole unit.
       newPosition.x = Math.round(newPosition.x);
       newPosition.y = Math.round(newPosition.y);
       newPosition.z = Math.round(newPosition.z);
-      console.log("[DEBUG] Position after snapping to grid:", newPosition);
 
-      // Update selected object's position.
       this.selected.position.copy(newPosition);
-      console.log("[DEBUG] Selected object's new position:", this.selected.position);
-
-      // Dispatch a change event after moving the object.
       this.dispatchEvent({ type: 'change' });
-    } else {
-      console.log("[DEBUG] No plane intersection found in onMouseMove.");
-    }
-  }
-
-
-  // On mouse up, finalize the placement.
-  onMouseUp(event) {
-    event.preventDefault();
-    if (this.selected) {
-      const planeIntersect = this.getPlaneIntersection(event);
-      if (planeIntersect) {
-        const newPosition = new THREE.Vector3();
-        newPosition.copy(planeIntersect.point).add(planeIntersect.face.normal);
-        newPosition.sub(this.offset);
-        newPosition.x = Math.round(newPosition.x);
-        newPosition.y = Math.round(newPosition.y);
-        newPosition.z = Math.round(newPosition.z);
-        this.selected.position.copy(newPosition);
-      }
-
-      this.selected.removeHighlight();
-      // Dispatch a change event after finalizing the object's position.
-      this.dispatchEvent({ type: 'change' });
-
-      // Release the selected object.
-      this.selected = null;
     }
   }
 }
