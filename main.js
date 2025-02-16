@@ -96,16 +96,30 @@ class SceneManager {
   }
 
   createTShapes() {
-    this.tShapes = CONFIG.T_SHAPES.POSITIONS.map(pos => {
+    // Number of TShapes to stack
+    const numShapes = 5;
+    // Approximate height of each TShape
+    const shapeHeight = 1;
+    // Use the x and z from the config's first position as our base position
+    const basePosition = CONFIG.T_SHAPES.POSITIONS[0];
+
+    this.tShapes = [];
+
+    for (let i = 0; i < numShapes; i++) {
       const material = new THREE.MeshToonMaterial({
         color: CONFIG.T_SHAPES.MATERIAL.COLOR,
         emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
       });
       const tShape = new TShape(material);
-      tShape.position.set(pos.x, 0, pos.z);
+      // Stack by increasing the y coordinate
+      tShape.position.set(
+        basePosition.x,
+        i * shapeHeight, // Each new TShape is placed 5 units higher than the previous one
+        basePosition.z
+      );
       this.scene.add(tShape);
-      return tShape;
-    });
+      this.tShapes.push(tShape);
+    }
   }
 
   setupControls() {
