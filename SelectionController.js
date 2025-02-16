@@ -16,7 +16,6 @@ class SelectionController extends THREE.EventDispatcher {
     this.selected = null;
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-    this.offset = new THREE.Vector3();
 
     // Create an invisible ground plane for raycasting.
     // (This plane must be large enough to cover the grid area.)
@@ -69,7 +68,7 @@ class SelectionController extends THREE.EventDispatcher {
   }
 
   // Toggle selection on mouse down.
-onMouseDown(event) {
+  onMouseDown(event) {
     event.preventDefault();
 
     // Right mouse button rotates the selected object around its y-axis.
@@ -84,52 +83,48 @@ onMouseDown(event) {
       return; // Skip further processing for RMB.
     }
 
-    // For left mouse button (LMB): toggle selection.
-    const intersects = this.getIntersects(event, this.selectableObjects);
-    const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
-
+     // Left mouse button (LMB) handling:
     if (!this.selected) {
       // No object selected – try to select one.
+      const intersects = this.getIntersects(event, this.selectableObjects);
+      const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
       if (selectableUnderMouse) {
         this.selected = selectableUnderMouse;
         this.selected.highlight();
-        const planeIntersect = this.getPlaneIntersection(event);
-        if (planeIntersect) {
-          // Calculate offset to avoid snapping.
-          this.offset.set(
-            planeIntersect.point.x - this.selected.position.x,
-            0,
-            planeIntersect.point.z - this.selected.position.z
-          );
-        }
         this.dispatchEvent({ type: 'change' });
       }
     } else {
-      // An object is already selected.
-      if (selectableUnderMouse === this.selected) {
-        // Clicking the same object releases the selection.
-        this.selected.removeHighlight();
-        this.selected = null;
-        this.dispatchEvent({ type: 'change' });
-      } else if (selectableUnderMouse && selectableUnderMouse !== this.selected) {
-        // Clicking a different selectable: switch selection.
-        this.selected.removeHighlight();
-        this.selected = selectableUnderMouse;
-        this.selected.highlight();
-        const planeIntersect = this.getPlaneIntersection(event);
-        if (planeIntersect) {
-          this.offset.copy(planeIntersect.point).sub(this.selected.position);
+      // An object is already selected – "place" it.
+      // Use a similar approach as onMouseMove to compute its new position.
+      const objectsToTest = [
+        this.groundPlane,
+        ...this.selectableObjects.filter(obj => obj !== this.selected)
+      ];
+      const intersects = this.getIntersects(event, objectsToTest);
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const newPosition = intersect.point.clone();
+
+        // If the intersected face exists, add its normal (transformed to world space)
+        // to the intersection point.
+        if (intersect.face) {
+          const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
+          newPosition.add(worldNormal);
         }
-        this.dispatchEvent({ type: 'change' });
-      } else {
-        // Clicked on empty space – release the current selection.
-        this.selected.removeHighlight();
-        this.selected = null;
-        this.dispatchEvent({ type: 'change' });
+
+        // Optional: Snap to whole-number positions.
+        newPosition.x = Math.round(newPosition.x);
+        newPosition.y = Math.round(newPosition.y);
+        newPosition.z = Math.round(newPosition.z);
+        this.selected.position.copy(newPosition);
       }
+      // Deselect the object after placing it.
+      this.selected.removeHighlight();
+      this.selected = null;
+
+      this.dispatchEvent({ type: 'change' });
     }
   }
-
 
     // While moving the mouse, if an object is selected, update its position.
   onMouseMove(event) {
@@ -155,8 +150,6 @@ onMouseDown(event) {
         newPosition.add(worldNormal);
       }
 
-      // Adjust for the offset computed on mouse down.
-      //newPosition.sub(this.offset);
 
       // Optional: Snap to whole-number positions.
       newPosition.x = Math.round(newPosition.x);
