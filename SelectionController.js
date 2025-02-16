@@ -96,7 +96,11 @@ onMouseDown(event) {
         const planeIntersect = this.getPlaneIntersection(event);
         if (planeIntersect) {
           // Calculate offset to avoid snapping.
-          this.offset.copy(planeIntersect.point).sub(this.selected.position);
+          this.offset.set(
+            planeIntersect.point.x - this.selected.position.x,
+            0,
+            planeIntersect.point.z - this.selected.position.z
+          );
         }
         this.dispatchEvent({ type: 'change' });
       }
@@ -127,22 +131,34 @@ onMouseDown(event) {
   }
 
 
-  // While moving the mouse, if an object is selected, update its position.
+    // While moving the mouse, if an object is selected, update its position.
   onMouseMove(event) {
     event.preventDefault();
+    if (!this.selected) return;
 
-    if (!this.selected) {
-      return;
-    }
+    // Exclude the selected object from the intersection test.
+    const objectsToTest = [
+      this.groundPlane,
+      ...this.selectableObjects.filter(obj => obj !== this.selected)
+    ];
 
-    const planeIntersect = this.getPlaneIntersection(event);
-    if (planeIntersect) {
-      const newPosition = new THREE.Vector3();
-      // Using your provided snippet:
-      newPosition.copy(planeIntersect.point).add(planeIntersect.face.normal);
-      newPosition.sub(this.offset);
+    // Get intersections from the mouse ray.
+    const intersects = this.getIntersects(event, objectsToTest);
+    if (intersects.length > 0) {
+      const intersect = intersects[0];
+      const newPosition = intersect.point.clone();
 
-      // Snap to the nearest whole unit.
+      // Use the intersected face's normal (transformed to world space)
+      // to lift the object. (For the ground plane, this normal is usually (0,1,0).)
+      if (intersect.face) {
+        const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
+        newPosition.add(worldNormal);
+      }
+
+      // Adjust for the offset computed on mouse down.
+      //newPosition.sub(this.offset);
+
+      // Optional: Snap to whole-number positions.
       newPosition.x = Math.round(newPosition.x);
       newPosition.y = Math.round(newPosition.y);
       newPosition.z = Math.round(newPosition.z);
@@ -151,6 +167,8 @@ onMouseDown(event) {
       this.dispatchEvent({ type: 'change' });
     }
   }
+
+
 
     // Listen for wheel events to rotate the selected object around its x-axis.
   // Rotates in 90° increments.
