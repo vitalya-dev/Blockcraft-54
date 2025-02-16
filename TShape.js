@@ -35,6 +35,43 @@ export default class TShape extends THREE.Group {
     });
   }
 
+  updateBlockPositions() {
+    const center = this.children[0];
+    const top = this.children[3];
+
+      // Get their world positions.
+    const centerWorldPos = new THREE.Vector3();
+    const topWorldPos = new THREE.Vector3();
+    center.getWorldPosition(centerWorldPos);
+    top.getWorldPosition(topWorldPos);
+
+    const positions_1 = [
+      [0, 0, 0],  // Center
+      [1, 0, 0],  // Right
+      [-1, 0, 0], // Left
+      [0, 0, -1]  // Top
+    ];
+
+    const positions_2 = [
+      [0, 1, 0],  // Center (lifted)
+      [1, 1, 0],  // Right (lifted)
+      [-1, 1, 0], // Left (lifted)
+      [0, 0, 0]   // Top at base level
+    ];
+
+    console.log(topWorldPos.y < centerWorldPos.y);
+
+      // Choose which position set to use based on the world y positions.
+    const positions = topWorldPos.y < centerWorldPos.y ? positions_2 : positions_1;
+
+    // Update each child's local position.
+    this.children.forEach((child, i) => {
+      child.position.set(...positions[i]);
+    });
+
+    this.updateMatrix()
+  }
+
   getOccupiedCells() {
     const cells = [];
     // For each child (box) of the group, determine its world position.

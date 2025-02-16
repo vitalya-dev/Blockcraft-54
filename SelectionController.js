@@ -178,7 +178,7 @@ class SelectionController extends THREE.EventDispatcher {
     
     // Snap to the nearest multiple of 90°.
     this.selected.rotation.x = Math.round(this.selected.rotation.x / angleStep) * angleStep;
-
+    this.selected.updateBlockPositions();
     this.dispatchEvent({ type: 'change' });
   }
 }
