@@ -1,111 +1,96 @@
 import * as THREE from 'three';
 
+// All position sets for the TShape
+const POSITION_SETS = {
+  center: [
+    [0, 0, 0],   // Center
+    [1, 0, 0],   // Right
+    [-1, 0, 0],  // Left
+    [0, 0, -1]   // Top
+  ],
+  top: [
+    [0, 0, 1],   // Center
+    [1, 0, 1],   // Right
+    [-1, 0, 1],  // Left
+    [0, 0, 0]    // Top at base level
+  ],
+  left: [
+    [1, 0, 0],   // Center relative to left pivot
+    [2, 0, 0],   // Right
+    [0, 0, 0],   // Left (pivot)
+    [1, 0, -1]   // Top
+  ],
+  right: [
+    [-1, 0, 0],  // Center relative to right pivot
+    [0, 0, 0],   // Right (pivot)
+    [-2, 0, 0],  // Left
+    [-1, 0, -1]  // Top
+  ]
+};
+
 export default class TShape extends THREE.Group {
   constructor(material) {
     super();
     this.name = "TShape";
     this.material = material;
-    const positions = [
-      [0, 0, 0],  // Center
-      [1, 0, 0],  // Right
-      [-1, 0, 0], // Left
-      [0, 0, -1]   // Top
-    ];
     
-    positions.forEach(pos => {
-      // Create the box mesh
-      const geometry = new THREE.BoxGeometry(1, 1, 1);
-      const box = new THREE.Mesh(geometry, material);
-      box.position.set(...pos);
-      box.name = "Tshape Box";
-      box.tshape = this;
-      
-      // Create edges geometry for the box
-      const edgesGeometry = new THREE.EdgesGeometry(geometry);
-      const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-      const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
-      edges.tshape = this;
-      edges.raycast = () => {};
-      
-      // Add the edges as a child of the box so that they follow its transform
-      box.add(edges);
-      
-      // Add the box (with its edges) to the TShape group
-      this.add(box);
+    // Use the 'center' set as the initial positions for the boxes.
+    POSITION_SETS.center.forEach(pos => {
+      this.add(this.createBoxWithEdges(pos, material));
     });
   }
 
+  /**
+   * Creates a box mesh with edge lines at the given position.
+   */
+  createBoxWithEdges(pos, material) {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const box = new THREE.Mesh(geometry, material);
+    box.position.set(...pos);
+    box.name = "Tshape Box";
+    box.tshape = this;
+    
+    // Create and add edges to the box.
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      new THREE.LineBasicMaterial({ color: 0x000000 })
+    );
+    edges.tshape = this;
+    edges.raycast = () => {};
+    box.add(edges);
+    
+    return box;
+  }
+
+  /**
+   * Updates block positions by selecting a position set based on the blocks' rounded y values.
+   */
   updateBlockPositions() {
-    // Ensure all transformations are applied before getting world positions
+    // Ensure all transformations are updated.
     this.updateMatrixWorld(true);
 
-    // Retrieve the four blocks by their indices:
-    // children[0] = center, children[1] = right, children[2] = left, children[3] = top.
-    const center = this.children[0];
-    const right  = this.children[1];
-    const left   = this.children[2];
-    const top    = this.children[3];
+    // Helper: get the rounded y value for the child at the given index.
+    const getRoundedY = index => {
+      const pos = new THREE.Vector3();
+      this.children[index].getWorldPosition(pos);
+      return Math.round(pos.y);
+    };
 
-    // Get world positions for each block.
-    const centerWorldPos = new THREE.Vector3();
-    const topWorldPos    = new THREE.Vector3();
-    const leftWorldPos   = new THREE.Vector3();
-    const rightWorldPos  = new THREE.Vector3();
+    const centerY = getRoundedY(0);
+    const topY    = getRoundedY(3);
+    const rightY  = getRoundedY(1);
+    const leftY   = getRoundedY(2);
 
-    center.getWorldPosition(centerWorldPos);
-    top.getWorldPosition(topWorldPos);
-    left.getWorldPosition(leftWorldPos);
-    right.getWorldPosition(rightWorldPos);
-
-    // Round the y coordinates for comparison.
-    const centerY = Math.round(centerWorldPos.y);
-    const topY    = Math.round(topWorldPos.y);
-    const leftY   = Math.round(leftWorldPos.y);
-    const rightY  = Math.round(rightWorldPos.y);
-
-    // Default orientation (pivot is center)
-    const positions_1 = [
-      [0, 0, 0],   // Center
-      [1, 0, 0],   // Right
-      [-1, 0, 0],  // Left
-      [0, 0, -1]   // Top
-    ];
-
-    // Case when the top block is lower than the center.
-    const positions_2 = [
-      [0, 0, 1],   // Center
-      [1, 0, 1],   // Right
-      [-1, 0, 1],  // Left
-      [0, 0, 0]    // Top (now at base level)
-    ];
-
-    // New case: left block as pivot.
-    const positions_3 = [
-      [1, 0, 0],   // Center relative to left pivot
-      [2, 0, 0],   // Right
-      [0, 0, 0],   // Left (pivot)
-      [1, 0, -1]   // Top
-    ];
-
-    // New case: right block as pivot.
-    const positions_4 = [
-      [-1, 0, 0],  // Center relative to right pivot
-      [0, 0, 0],   // Right (pivot)
-      [-2, 0, 0],  // Left
-      [-1, 0, -1]  // Top
-    ];
-
-    // Choose which position set to use based on the rounded y values.
-    // The logic checks if any of the non-center blocks are lower than the center.
+    // Select the appropriate position set.
     let positions;
     if (topY < centerY) {
-      positions = positions_2;
+      positions = POSITION_SETS.top;
     } else if (leftY < centerY) {
-      positions = positions_3;
+      positions = POSITION_SETS.left;
     } else if (rightY < centerY) {
-      positions = positions_4;
+      positions = POSITION_SETS.right;
     } else {
-      positions = positions_1;
+      positions = POSITION_SETS.center;
     }
 
     // Update each child's local position.
@@ -113,79 +98,46 @@ export default class TShape extends THREE.Group {
       child.position.set(...positions[i]);
     });
 
-    // Update matrices again to reflect new positions.
+    // Update matrices again to apply the changes.
     this.updateMatrixWorld(true);
   }
 
-
   getOccupiedCells() {
-    const cells = [];
-    // For each child (box) of the group, determine its world position.
-    this.children.forEach(child => {
-      const worldPos = new THREE.Vector3();
-      child.getWorldPosition(worldPos);
-      // Because our shapes snap by one, round the world coordinates.
-      const gridX = Math.round(worldPos.x);
-      const gridY = Math.round(worldPos.y);
-      const gridZ = Math.round(worldPos.z);
-      cells.push({ x: gridX, y: gridY, z: gridZ });
+    return this.children.map(child => {
+      const pos = new THREE.Vector3();
+      child.getWorldPosition(pos);
+      return {
+        x: Math.round(pos.x),
+        y: Math.round(pos.y),
+        z: Math.round(pos.z)
+      };
     });
-    return cells;
+  }
+
+  /**
+   * Helper to traverse the shape and set the emissive color.
+   */
+  setEmissiveColor(color) {
+    this.traverse(child => {
+      if (child instanceof THREE.Mesh && child.material && 'emissive' in child.material) {
+        child.material.emissive.set(color);
+      }
+    });
   }
 
   onHoverEnter() {
-    this.traverse(child => {
-      if (child instanceof THREE.Mesh) {
-        // If the material supports an emissive property, use it for the hover effect.
-        if (child.material && 'emissive' in child.material) {
-          child.material.emissive.set(0x555555);
-        }
-      }
-    });
+    this.setEmissiveColor(0x555555);
   }
 
-  /**
-   * Call this method to remove the hover effect from the TShape.
-   * For example, this can be triggered when the pointer leaves the object.
-   */
   onHoverExit() {
-    this.traverse(child => {
-      if (child instanceof THREE.Mesh) {
-        if (child.material && 'emissive' in child.material) {
-          // Reset the emissive color (assuming the original emissive is black).
-          child.material.emissive.set(0x000000);
-        }
-      }
-    });
+    this.setEmissiveColor(0x000000);
   }
 
-  // ------------------ Selection Highlight Methods ------------------
-
-  /**
-   * Call this method when the TShape is selected to highlight it.
-   * In this example, we set the emissive color to yellow.
-   */
   highlight() {
-    this.traverse(child => {
-      if (child instanceof THREE.Mesh) {
-        if (child.material && 'emissive' in child.material) {
-          child.material.emissive.set(0xffff00); // Yellow highlight
-        }
-      }
-    });
+    this.setEmissiveColor(0xffff00);
   }
 
-  /**
-   * Call this method when the TShape is deselected to remove the highlight.
-   * This resets the emissive color back to the original value (black).
-   */
   removeHighlight() {
-    this.traverse(child => {
-      if (child instanceof THREE.Mesh) {
-        if (child.material && 'emissive' in child.material) {
-          child.material.emissive.set(0x000000); // Reset emissive
-        }
-      }
-    });
+    this.setEmissiveColor(0x000000);
   }
 }
