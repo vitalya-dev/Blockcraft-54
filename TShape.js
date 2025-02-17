@@ -39,45 +39,84 @@ export default class TShape extends THREE.Group {
     // Ensure all transformations are applied before getting world positions
     this.updateMatrixWorld(true);
 
+    // Retrieve the four blocks by their indices:
+    // children[0] = center, children[1] = right, children[2] = left, children[3] = top.
     const center = this.children[0];
-    const top = this.children[3];
+    const right  = this.children[1];
+    const left   = this.children[2];
+    const top    = this.children[3];
 
-      // Get their world positions.
+    // Get world positions for each block.
     const centerWorldPos = new THREE.Vector3();
-    const topWorldPos = new THREE.Vector3();
+    const topWorldPos    = new THREE.Vector3();
+    const leftWorldPos   = new THREE.Vector3();
+    const rightWorldPos  = new THREE.Vector3();
+
     center.getWorldPosition(centerWorldPos);
     top.getWorldPosition(topWorldPos);
+    left.getWorldPosition(leftWorldPos);
+    right.getWorldPosition(rightWorldPos);
 
-      // Round the y coordinates for comparison
+    // Round the y coordinates for comparison.
     const centerY = Math.round(centerWorldPos.y);
-    const topY = Math.round(topWorldPos.y);
+    const topY    = Math.round(topWorldPos.y);
+    const leftY   = Math.round(leftWorldPos.y);
+    const rightY  = Math.round(rightWorldPos.y);
 
+    // Default orientation (pivot is center)
     const positions_1 = [
-      [0, 0, 0],  // Center
-      [1, 0, 0],  // Right
-      [-1, 0, 0], // Left
-      [0, 0, -1]  // Top
+      [0, 0, 0],   // Center
+      [1, 0, 0],   // Right
+      [-1, 0, 0],  // Left
+      [0, 0, -1]   // Top
     ];
 
+    // Case when the top block is lower than the center.
     const positions_2 = [
-      [0, 0, 1],  // Center
-      [1, 0, 1],  // Right
-      [-1, 0, 1], // Left
-      [0, 0, 0]   // Top at base level
+      [0, 0, 1],   // Center
+      [1, 0, 1],   // Right
+      [-1, 0, 1],  // Left
+      [0, 0, 0]    // Top (now at base level)
     ];
 
-      // Choose which position set to use based on the world y positions.
-    const positions = topY < centerY ? positions_2 : positions_1;
+    // New case: left block as pivot.
+    const positions_3 = [
+      [1, 0, 0],   // Center relative to left pivot
+      [2, 0, 0],   // Right
+      [0, 0, 0],   // Left (pivot)
+      [1, 0, -1]   // Top
+    ];
+
+    // New case: right block as pivot.
+    const positions_4 = [
+      [-1, 0, 0],  // Center relative to right pivot
+      [0, 0, 0],   // Right (pivot)
+      [-2, 0, 0],  // Left
+      [-1, 0, -1]  // Top
+    ];
+
+    // Choose which position set to use based on the rounded y values.
+    // The logic checks if any of the non-center blocks are lower than the center.
+    let positions;
+    if (topY < centerY) {
+      positions = positions_2;
+    } else if (leftY < centerY) {
+      positions = positions_3;
+    } else if (rightY < centerY) {
+      positions = positions_4;
+    } else {
+      positions = positions_1;
+    }
 
     // Update each child's local position.
     this.children.forEach((child, i) => {
       child.position.set(...positions[i]);
     });
 
-    // Update matrices again to reflect new positions
+    // Update matrices again to reflect new positions.
     this.updateMatrixWorld(true);
-
   }
+
 
   getOccupiedCells() {
     const cells = [];
