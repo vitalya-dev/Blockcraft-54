@@ -36,6 +36,9 @@ export default class TShape extends THREE.Group {
   }
 
   updateBlockPositions() {
+    // Ensure all transformations are applied before getting world positions
+    this.updateMatrixWorld(true);
+
     const center = this.children[0];
     const top = this.children[3];
 
@@ -45,6 +48,10 @@ export default class TShape extends THREE.Group {
     center.getWorldPosition(centerWorldPos);
     top.getWorldPosition(topWorldPos);
 
+      // Round the y coordinates for comparison
+    const centerY = Math.round(centerWorldPos.y);
+    const topY = Math.round(topWorldPos.y);
+
     const positions_1 = [
       [0, 0, 0],  // Center
       [1, 0, 0],  // Right
@@ -53,23 +60,23 @@ export default class TShape extends THREE.Group {
     ];
 
     const positions_2 = [
-      [0, 1, 0],  // Center (lifted)
-      [1, 1, 0],  // Right (lifted)
-      [-1, 1, 0], // Left (lifted)
+      [0, 0, 1],  // Center
+      [1, 0, 1],  // Right
+      [-1, 0, 1], // Left
       [0, 0, 0]   // Top at base level
     ];
 
-    console.log(topWorldPos.y < centerWorldPos.y);
-
       // Choose which position set to use based on the world y positions.
-    const positions = topWorldPos.y < centerWorldPos.y ? positions_2 : positions_1;
+    const positions = topY < centerY ? positions_2 : positions_1;
 
     // Update each child's local position.
     this.children.forEach((child, i) => {
       child.position.set(...positions[i]);
     });
 
-    this.updateMatrix()
+    // Update matrices again to reflect new positions
+    this.updateMatrixWorld(true);
+
   }
 
   getOccupiedCells() {
