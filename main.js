@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import TShape from './TShape.js';
 import SelectionController from './SelectionController.js';
+import { MapControls } from 'three/addons/controls/MapControls.js'; // Import MapControls
 
 // Configuration constants
 const CONFIG = {
   CAMERA: {
-    FOV: 75,
-    POSITION: new THREE.Vector3(0, 40, 10),
+    POSITION: new THREE.Vector3(0, 25, 0),
     NEAR: 0.1,
     FAR: 1000
   },
@@ -56,14 +56,18 @@ class SceneManager {
   }
 
   createCamera() {
-    const camera = new THREE.PerspectiveCamera(
-      CONFIG.CAMERA.FOV,
-      window.innerWidth / window.innerHeight,
+    const aspect = window.innerWidth / window.innerHeight;
+    const frustumSize = 20; // Adjust this value to change the zoom level
+    const camera = new THREE.OrthographicCamera(
+      (frustumSize * aspect) / -2,  // left
+      (frustumSize * aspect) / 2,   // right
+      frustumSize / 2,              // top
+      frustumSize / -2,             // bottom
       CONFIG.CAMERA.NEAR,
       CONFIG.CAMERA.FAR
     );
     camera.position.copy(CONFIG.CAMERA.POSITION);
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(new THREE.Vector3(camera.position.x, 0, camera.position.z));
     return camera;
   }
 
@@ -125,6 +129,21 @@ class SceneManager {
   setupControls() {
     this.selectionController = new SelectionController(this.camera, this.scene, this.renderer, this.tShapes);
     this.selectionController.addEventListener('change', () => this.render());
+
+    this.mapControls = new MapControls(this.camera, this.renderer.domElement);
+    this.mapControls.enableRotate = false;
+    //this.mapControls.enableZoom = false; // Disable zooming
+    // Override mouse button assignments so that only RMB pans:
+    // Set LEFT and MIDDLE to a value that doesn't trigger an action (here using -1)
+    //this.mapControls.mouseButtons.LEFT = -1;
+    //this.mapControls.mouseButtons.MIDDLE = -1;
+    // Keep right mouse button for panning
+    //this.mapControls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
+    
+    // Update the target so that the camera always looks straight down.
+    //this.mapControls.target.set(this.camera.position.x, 0, this.camera.position.z);
+    
+    this.mapControls.addEventListener('change', () => this.render());
   }
 
   setupEventListeners() {
@@ -133,7 +152,12 @@ class SceneManager {
 
 
   onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const aspect = window.innerWidth / window.innerHeight;
+    const frustumSize = 50; // Same value used in createCamera
+    this.camera.left = (-frustumSize * aspect) / 2;
+    this.camera.right = (frustumSize * aspect) / 2;
+    this.camera.top = frustumSize / 2;
+    this.camera.bottom = -frustumSize / 2;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.render();
