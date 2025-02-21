@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import TShape from './TShape.js';
 import SelectionController from './SelectionController.js';
-import { MapControls } from 'three/addons/controls/MapControls.js'; // Import MapControls
 
 // Configuration constants
 const CONFIG = {
@@ -129,21 +128,6 @@ class SceneManager {
   setupControls() {
     this.selectionController = new SelectionController(this.camera, this.scene, this.renderer, this.tShapes);
     this.selectionController.addEventListener('change', () => this.render());
-
-    this.mapControls = new MapControls(this.camera, this.renderer.domElement);
-    this.mapControls.enableRotate = false;
-    //this.mapControls.enableZoom = false; // Disable zooming
-    // Override mouse button assignments so that only RMB pans:
-    // Set LEFT and MIDDLE to a value that doesn't trigger an action (here using -1)
-    //this.mapControls.mouseButtons.LEFT = -1;
-    //this.mapControls.mouseButtons.MIDDLE = -1;
-    // Keep right mouse button for panning
-    //this.mapControls.mouseButtons.RIGHT = THREE.MOUSE.PAN;
-    
-    // Update the target so that the camera always looks straight down.
-    //this.mapControls.target.set(this.camera.position.x, 0, this.camera.position.z);
-    
-    this.mapControls.addEventListener('change', () => this.render());
   }
 
   setupEventListeners() {

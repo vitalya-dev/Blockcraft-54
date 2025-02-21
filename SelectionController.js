@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+import { MapControls } from 'three/addons/controls/MapControls.js'; // Import MapControls
+
 class SelectionController extends THREE.EventDispatcher {
   /**
    * @param {THREE.Camera} camera - The scene camera.
@@ -26,6 +28,12 @@ class SelectionController extends THREE.EventDispatcher {
     // Rotate so the plane is horizontal (parallel to XZ).
     this.groundPlane.rotation.x = -Math.PI / 2;
     this.scene.add(this.groundPlane);
+
+    // Instantiate MapControls inside SelectionController.
+    this.mapControls = new MapControls(camera, renderer.domElement);
+    this.mapControls.enableRotate = false; // Customize as needed.
+    // Forward map controls changes to a common "change" event.
+    this.mapControls.addEventListener('change', () => this.dispatchEvent({ type: 'change' }));
 
     // Bind event listeners.
     this.renderer.domElement.addEventListener('mousedown', this.onMouseDown.bind(this), false);
@@ -70,6 +78,7 @@ class SelectionController extends THREE.EventDispatcher {
   // Toggle selection on mouse down.
   onMouseDown(event) {
     event.preventDefault();
+    this.mapControls.enabled = false;
 
     // Right mouse button rotates the selected object around its y-axis.
     if (event.button === 2) { // RMB
@@ -123,6 +132,9 @@ class SelectionController extends THREE.EventDispatcher {
       this.selected = null;
 
       this.dispatchEvent({ type: 'change' });
+    }
+    if (!this.selected) {
+      this.mapControls.enabled = true;
     }
   }
 
