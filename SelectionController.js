@@ -18,6 +18,7 @@ class SelectionController extends THREE.EventDispatcher {
     this.selected = null;
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
+    this.offset = new THREE.Vector3(); // Initialize offset
 
     // Create an invisible ground plane for raycasting.
     // (This plane must be large enough to cover the grid area.)
@@ -31,7 +32,7 @@ class SelectionController extends THREE.EventDispatcher {
 
     // Instantiate MapControls inside SelectionController.
     this.mapControls = new MapControls(camera, renderer.domElement);
-    this.mapControls.enableRotate = false; // Customize as needed.
+    this.mapControls.enableRotate = true; // Customize as needed.
     // Forward map controls changes to a common "change" event.
     this.mapControls.addEventListener('change', () => this.dispatchEvent({ type: 'change' }));
 
@@ -99,6 +100,10 @@ class SelectionController extends THREE.EventDispatcher {
           this.selected = selectableUnderMouse;
           this.selected.highlight();
           this.dispatchEvent({ type: 'change' });
+          // Calculate offset from the clicked point to the object's position
+          const intersect = intersects[0];
+          this.offset.copy(intersect.point).sub(this.selected.position); // Store offset
+          this.offset.y = 0;
         }
       } else {
         // An object is already selected – "place" it.
@@ -111,17 +116,19 @@ class SelectionController extends THREE.EventDispatcher {
         if (intersects.length > 0) {
           const intersect = intersects[0];
           const newPosition = intersect.point.clone();
-
+          console.log(newPosition);
           // If the intersected face exists, add its normal (transformed to world space)
           // to the intersection point.
           if (intersect.face) {
             const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-            newPosition.add(worldNormal);
+            const halfHeight = 0.5; // TShape height = 1 unit, pivot at center
+            newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
           }
-
+          console.log(newPosition);
+          newPosition.sub(this.offset); // Apply offset
           // Optional: Snap to whole-number positions.
           newPosition.x = Math.round(newPosition.x);
-          newPosition.y = Math.round(newPosition.y);
+          //newPosition.y = Math.round(newPosition.y);
           newPosition.z = Math.round(newPosition.z);
           this.selected.position.copy(newPosition);
         }
@@ -158,13 +165,14 @@ class SelectionController extends THREE.EventDispatcher {
       // to lift the object. (For the ground plane, this normal is usually (0,1,0).)
       if (intersect.face) {
         const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-        newPosition.add(worldNormal);
+        const halfHeight = 0.51; // TShape height = 1 unit, pivot at center
+        newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
       }
 
-
+      newPosition.sub(this.offset); // Apply offset
       // Optional: Snap to whole-number positions.
       newPosition.x = Math.round(newPosition.x);
-      newPosition.y = Math.round(newPosition.y);
+      //newPosition.y = Math.round(newPosition.y);
       newPosition.z = Math.round(newPosition.z);
 
       this.selected.position.copy(newPosition);
