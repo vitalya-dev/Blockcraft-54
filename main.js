@@ -14,10 +14,19 @@ const CONFIG = {
     ANTIALIAS: true
   },
   LIGHTING: {
+    AMBIENT: {
+      COLOR: 0xffffff,
+      INTENSITY: 0.3
+    },
     DIRECTIONAL: {
       COLOR: 0xffffff,
-      INTENSITY: 0.8,
-      POSITION: new THREE.Vector3(5, 5, 5)
+      INTENSITY: 1.2,
+      POSITION: new THREE.Vector3(0, 20, 4)
+    },
+    DIRECTIONAL2: {
+      COLOR: 0xffffff,
+      INTENSITY: 0.4,
+      POSITION: new THREE.Vector3(-5, 25, 0)
     }
   },
   GRID: {
@@ -74,6 +83,8 @@ class SceneManager {
     const renderer = new THREE.WebGLRenderer({ 
       antialias: CONFIG.RENDERER.ANTIALIAS 
     });
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setClearColor(CONFIG.RENDERER.CLEAR_COLOR);
     document.body.appendChild(renderer.domElement);
@@ -81,12 +92,58 @@ class SceneManager {
   }
 
   setupLighting() {
-    const light = new THREE.DirectionalLight(
+    // Ambient light to soften shadows
+    const ambientLight = new THREE.AmbientLight(
+      CONFIG.LIGHTING.AMBIENT.COLOR,
+      CONFIG.LIGHTING.AMBIENT.INTENSITY
+    );
+    this.scene.add(ambientLight);
+
+    // Main directional light
+    const mainLight = new THREE.DirectionalLight(
       CONFIG.LIGHTING.DIRECTIONAL.COLOR,
       CONFIG.LIGHTING.DIRECTIONAL.INTENSITY
     );
-    light.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
-    this.scene.add(light);
+    mainLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
+    mainLight.castShadow = true;
+    // Configure shadow camera frustum
+    mainLight.shadow.camera.left = -40;
+    mainLight.shadow.camera.right = 40;
+    mainLight.shadow.camera.top = 40;
+    mainLight.shadow.camera.bottom = -40;
+    mainLight.shadow.camera.near = 0.1;
+    mainLight.shadow.camera.far = 100;
+
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    this.scene.add(mainLight);
+
+    // Secondary directional light for fill
+    // const fillLight = new THREE.DirectionalLight(
+    //   CONFIG.LIGHTING.DIRECTIONAL2.COLOR,
+    //   CONFIG.LIGHTING.DIRECTIONAL2.INTENSITY
+    // );
+    // fillLight.castShadow = true;
+    // fillLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
+    // fillLight.shadow.camera.left = -40;
+    // fillLight.shadow.camera.right = 40;
+    // fillLight.shadow.camera.top = 40;
+    // fillLight.shadow.camera.bottom = -40;
+    // fillLight.shadow.camera.near = 0.1;
+    // fillLight.shadow.camera.far = 100;
+
+    // fillLight.shadow.mapSize.width = 2048;
+    // fillLight.shadow.mapSize.height = 2048;
+    // this.scene.add(fillLight);
+
+    // Shadow-catching plane
+    const shadowPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(40, 40),
+      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.2 })
+    );
+    shadowPlane.rotation.x = -Math.PI / 2;
+    shadowPlane.receiveShadow = true;
+    this.scene.add(shadowPlane);
   }
 
   setupGrid() {

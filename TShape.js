@@ -33,7 +33,8 @@ export default class TShape extends THREE.Group {
     super();
     this.name = "TShape";
     this.material = material;
-    
+    this.castShadow = true;  // Enable shadow casting for the entire group
+    this.receiveShadow = true;  // Enable shadow receiving
     // Use the 'center' set as the initial positions for the boxes.
     POSITION_SETS.center.forEach(pos => {
       this.add(this.createBoxWithEdges(pos, material));
@@ -49,7 +50,8 @@ export default class TShape extends THREE.Group {
     box.position.set(...pos);
     box.name = "Tshape Box";
     box.tshape = this;
-    
+    box.castShadow = true;  // Enable shadow casting for each box
+    box.receiveShadow = true;  // Enable shadow receiving
     // Create and add edges to the box.
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
