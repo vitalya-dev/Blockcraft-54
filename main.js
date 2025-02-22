@@ -16,7 +16,7 @@ const CONFIG = {
   LIGHTING: {
     AMBIENT: {
       COLOR: 0xffffff,
-      INTENSITY: 0.3
+      INTENSITY: 0.2
     },
     DIRECTIONAL: {
       COLOR: 0xffffff,
@@ -25,8 +25,8 @@ const CONFIG = {
     },
     DIRECTIONAL2: {
       COLOR: 0xffffff,
-      INTENSITY: 0.4,
-      POSITION: new THREE.Vector3(-5, 25, 0)
+      INTENSITY: 1.2,
+      POSITION: new THREE.Vector3(-4, 25, 0)
     }
   },
   GRID: {
@@ -118,25 +118,24 @@ class SceneManager {
     mainLight.shadow.mapSize.height = 2048;
     this.scene.add(mainLight);
 
-    // Secondary directional light for fill
-    // const fillLight = new THREE.DirectionalLight(
+    // Secondary directional light (right light)
+    // const rightLight = new THREE.DirectionalLight(
     //   CONFIG.LIGHTING.DIRECTIONAL2.COLOR,
     //   CONFIG.LIGHTING.DIRECTIONAL2.INTENSITY
     // );
-    // fillLight.castShadow = true;
-    // fillLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
-    // fillLight.shadow.camera.left = -40;
-    // fillLight.shadow.camera.right = 40;
-    // fillLight.shadow.camera.top = 40;
-    // fillLight.shadow.camera.bottom = -40;
-    // fillLight.shadow.camera.near = 0.1;
-    // fillLight.shadow.camera.far = 100;
+    // rightLight.castShadow = true;
+    // rightLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
+    // rightLight.shadow.camera.left = -40;
+    // rightLight.shadow.camera.right = 40;
+    // rightLight.shadow.camera.top = 40;
+    // rightLight.shadow.camera.bottom = -40;
+    // rightLight.shadow.camera.near = 0.1;
+    // rightLight.shadow.camera.far = 100;
+    // rightLight.shadow.mapSize.width = 2048;
+    // rightLight.shadow.mapSize.height = 2048;
+    // this.scene.add(rightLight);
 
-    // fillLight.shadow.mapSize.width = 2048;
-    // fillLight.shadow.mapSize.height = 2048;
-    // this.scene.add(fillLight);
-
-    // Shadow-catching plane
+    //Shadow-catching plane
     const shadowPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(40, 40),
       new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.2 })

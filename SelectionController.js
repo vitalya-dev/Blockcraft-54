@@ -89,49 +89,48 @@ class SelectionController extends THREE.EventDispatcher {
         //this.selected.rotation.y = Math.round(this.selected.rotation.y / angleStep) * angleStep;
         this.dispatchEvent({ type: 'change' });
       }
-      return; // Skip further processing for RMB.
-    }
+    } else {
+       // Left mouse button (LMB) handling:
+      if (!this.selected) {
+        // No object selected – try to select one.
+        const intersects = this.getIntersects(event, this.selectableObjects);
+        const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
+        if (selectableUnderMouse) {
+          this.selected = selectableUnderMouse;
+          this.selected.highlight();
+          this.dispatchEvent({ type: 'change' });
+        }
+      } else {
+        // An object is already selected – "place" it.
+        // Use a similar approach as onMouseMove to compute its new position.
+        const objectsToTest = [
+          this.groundPlane,
+          ...this.selectableObjects.filter(obj => obj !== this.selected)
+        ];
+        const intersects = this.getIntersects(event, objectsToTest);
+        if (intersects.length > 0) {
+          const intersect = intersects[0];
+          const newPosition = intersect.point.clone();
 
-     // Left mouse button (LMB) handling:
-    if (!this.selected) {
-      // No object selected – try to select one.
-      const intersects = this.getIntersects(event, this.selectableObjects);
-      const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
-      if (selectableUnderMouse) {
-        this.selected = selectableUnderMouse;
-        this.selected.highlight();
+          // If the intersected face exists, add its normal (transformed to world space)
+          // to the intersection point.
+          if (intersect.face) {
+            const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
+            newPosition.add(worldNormal);
+          }
+
+          // Optional: Snap to whole-number positions.
+          newPosition.x = Math.round(newPosition.x);
+          newPosition.y = Math.round(newPosition.y);
+          newPosition.z = Math.round(newPosition.z);
+          this.selected.position.copy(newPosition);
+        }
+        // Deselect the object after placing it.
+        this.selected.removeHighlight();
+        this.selected = null;
+
         this.dispatchEvent({ type: 'change' });
       }
-    } else {
-      // An object is already selected – "place" it.
-      // Use a similar approach as onMouseMove to compute its new position.
-      const objectsToTest = [
-        this.groundPlane,
-        ...this.selectableObjects.filter(obj => obj !== this.selected)
-      ];
-      const intersects = this.getIntersects(event, objectsToTest);
-      if (intersects.length > 0) {
-        const intersect = intersects[0];
-        const newPosition = intersect.point.clone();
-
-        // If the intersected face exists, add its normal (transformed to world space)
-        // to the intersection point.
-        if (intersect.face) {
-          const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-          newPosition.add(worldNormal);
-        }
-
-        // Optional: Snap to whole-number positions.
-        newPosition.x = Math.round(newPosition.x);
-        newPosition.y = Math.round(newPosition.y);
-        newPosition.z = Math.round(newPosition.z);
-        this.selected.position.copy(newPosition);
-      }
-      // Deselect the object after placing it.
-      this.selected.removeHighlight();
-      this.selected = null;
-
-      this.dispatchEvent({ type: 'change' });
     }
     if (!this.selected) {
       this.mapControls.enabled = true;
