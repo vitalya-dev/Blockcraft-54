@@ -116,7 +116,6 @@ class SelectionController extends THREE.EventDispatcher {
         if (intersects.length > 0) {
           const intersect = intersects[0];
           const newPosition = intersect.point.clone();
-          console.log(newPosition);
           // If the intersected face exists, add its normal (transformed to world space)
           // to the intersection point.
           if (intersect.face) {
@@ -124,13 +123,33 @@ class SelectionController extends THREE.EventDispatcher {
             const halfHeight = 0.5; // TShape height = 1 unit, pivot at center
             newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
           }
-          console.log(newPosition);
           newPosition.sub(this.offset); // Apply offset
           // Optional: Snap to whole-number positions.
           newPosition.x = Math.round(newPosition.x);
           //newPosition.y = Math.round(newPosition.y);
           newPosition.z = Math.round(newPosition.z);
+
+           // Save the original position.
+          const originalPosition = this.selected.position.clone();
+
+          // Update the position 
           this.selected.position.copy(newPosition);
+
+          let collisionDetected = false;
+          for (const shape of this.selectableObjects) {
+            if (shape !== this.selected && this.selected.collidesWith(shape)) {
+              collisionDetected = true;
+              break;
+            }
+          }
+
+          console.log(collisionDetected);
+
+          if (collisionDetected) {
+            console.log('Collision detected. Cannot place shape here.');
+            // Revert to original position if collision occurs.
+            this.selected.position.copy(originalPosition);
+          }
         }
         // Deselect the object after placing it.
         this.selected.removeHighlight();
