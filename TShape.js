@@ -116,6 +116,29 @@ export default class TShape extends THREE.Group {
     });
   }
 
+  collidesWith(otherTShape) {
+    // Ensure that both shapes have updated their positions
+    this.updateMatrixWorld(true);
+    otherTShape.updateMatrixWorld(true);
+
+    const myCells = this.getOccupiedCells();
+    const otherCells = otherTShape.getOccupiedCells();
+
+    // Check if any cell in this shape overlaps with a cell in the other shape
+    for (let i = 0; i < myCells.length; i++) {
+      for (let j = 0; j < otherCells.length; j++) {
+        if (
+          myCells[i].x === otherCells[j].x &&
+          myCells[i].y === otherCells[j].y &&
+          myCells[i].z === otherCells[j].z
+        ) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   /**
    * Helper to traverse the shape and set the emissive color.
    */
