@@ -156,7 +156,7 @@ class SceneManager {
 
   createTShapes() {
     // Number of TShapes to stack
-    const numShapes = 5;
+    const numShapes = 2;
     // Approximate height of each TShape
     const shapeHeight = 1;
     // Use the x and z from the config's first position as our base position

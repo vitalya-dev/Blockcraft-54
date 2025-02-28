@@ -107,6 +107,7 @@ export default class TShape extends THREE.Group {
   getOccupiedCells() {
     return this.children.map(child => {
       const pos = new THREE.Vector3();
+      child.updateMatrixWorld(true);
       child.getWorldPosition(pos);
       return {
         x: Math.round(pos.x),

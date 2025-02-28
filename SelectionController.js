@@ -129,14 +129,12 @@ class SelectionController extends THREE.EventDispatcher {
           //newPosition.y = Math.round(newPosition.y);
           newPosition.z = Math.round(newPosition.z);
 
-           // Save the original position.
-          const originalPosition = this.selected.position.clone();
-
           // Update the position 
           this.selected.position.copy(newPosition);
 
           let collisionDetected = false;
           for (const shape of this.selectableObjects) {
+            console.log(shape.getOccupiedCells());
             if (shape !== this.selected && this.selected.collidesWith(shape)) {
               collisionDetected = true;
               break;
@@ -145,16 +143,12 @@ class SelectionController extends THREE.EventDispatcher {
 
           console.log(collisionDetected);
 
-          if (collisionDetected) {
-            console.log('Collision detected. Cannot place shape here.');
-            // Revert to original position if collision occurs.
-            this.selected.position.copy(originalPosition);
+          if (!collisionDetected) {
+            // Deselect the object after placing it.
+            this.selected.removeHighlight();
+            this.selected = null;
           }
         }
-        // Deselect the object after placing it.
-        this.selected.removeHighlight();
-        this.selected = null;
-
         this.dispatchEvent({ type: 'change' });
       }
     }
