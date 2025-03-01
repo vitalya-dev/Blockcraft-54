@@ -117,8 +117,8 @@ class SelectionController extends THREE.EventDispatcher {
     // Determine direction: scroll up (negative deltaY) rotates one way, down (positive) the other.
     const delta = event.deltaY > 0 ? 1 : -1;
     
-    // Update rotation along x-axis.
-    this.selected.rotation.x += delta * angleStep;
+    // Rotate around the local X-axis
+    this.selected.rotateX(delta * angleStep);
     
     // Snap to the nearest multiple of 90°.
     this.selected.rotation.x = Math.round(this.selected.rotation.x / angleStep) * angleStep;
