@@ -33,6 +33,9 @@ class SelectionController extends THREE.EventDispatcher {
     // Instantiate MapControls inside SelectionController.
     this.mapControls = new MapControls(camera, renderer.domElement);
     this.mapControls.enableRotate = true; // Customize as needed.
+    this.mapControls.maxPolarAngle = THREE.MathUtils.degToRad(35);
+    this.mapControls.minAzimuthAngle = THREE.MathUtils.degToRad(-45);
+    this.mapControls.maxAzimuthAngle = THREE.MathUtils.degToRad(45);
     // Forward map controls changes to a common "change" event.
     this.mapControls.addEventListener('change', () => this.dispatchEvent({ type: 'change' }));
 
@@ -102,8 +105,6 @@ class SelectionController extends THREE.EventDispatcher {
           this.dispatchEvent({ type: 'change' });
           // Calculate offset from the clicked point to the object's position
           const intersect = intersects[0];
-          this.offset.copy(intersect.point).sub(this.selected.position); // Store offset
-          this.offset.y = 0;
         }
       } else {
         // An object is already selected – "place" it.
@@ -123,7 +124,6 @@ class SelectionController extends THREE.EventDispatcher {
             const halfHeight = 0.5; // TShape height = 1 unit, pivot at center
             newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
           }
-          newPosition.sub(this.offset); // Apply offset
           // Optional: Snap to whole-number positions.
           newPosition.x = Math.round(newPosition.x);
           //newPosition.y = Math.round(newPosition.y);
@@ -134,8 +134,9 @@ class SelectionController extends THREE.EventDispatcher {
 
           let collisionDetected = false;
           for (const shape of this.selectableObjects) {
-            console.log(shape.getOccupiedCells());
             if (shape !== this.selected && this.selected.collidesWith(shape)) {
+              console.log(shape.getOccupiedCells());
+              console.log(this.selected.getOccupiedCells());
               collisionDetected = true;
               break;
             }
@@ -181,8 +182,6 @@ class SelectionController extends THREE.EventDispatcher {
         const halfHeight = 0.51; // TShape height = 1 unit, pivot at center
         newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
       }
-
-      newPosition.sub(this.offset); // Apply offset
       // Optional: Snap to whole-number positions.
       newPosition.x = Math.round(newPosition.x);
       //newPosition.y = Math.round(newPosition.y);

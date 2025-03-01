@@ -5,7 +5,7 @@ import SelectionController from './SelectionController.js';
 // Configuration constants
 const CONFIG = {
   CAMERA: {
-    POSITION: new THREE.Vector3(0, 25, 0),
+    POSITION: new THREE.Vector3(0, 20, 0),
     NEAR: 0.1,
     FAR: 1000
   },
@@ -65,7 +65,7 @@ class SceneManager {
 
   createCamera() {
     const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 20; // Adjust this value to change the zoom level
+    const frustumSize = 18; // Adjust this value to change the zoom level
     const camera = new THREE.OrthographicCamera(
       (frustumSize * aspect) / -2,  // left
       (frustumSize * aspect) / 2,   // right
@@ -156,7 +156,7 @@ class SceneManager {
 
   createTShapes() {
     // Number of TShapes to stack
-    const numShapes = 2;
+    const numShapes = 18;
     // Approximate height of each TShape
     const shapeHeight = 1;
     // Use the x and z from the config's first position as our base position
@@ -187,7 +187,25 @@ class SceneManager {
   }
 
   setupEventListeners() {
+    window.addEventListener('keydown', (event) => {
+      // Check if the pressed key is "d" (or "D")
+      if (event.key.toLowerCase() === 'd') {
+        // Log the camera's current position
+        console.log('Camera position:', this.camera.position);
 
+        // Compute the camera's look direction.
+        // Note: Three.js does not store the "lookAt" target,
+        // so we compute the normalized forward direction.
+        const direction = new THREE.Vector3();
+        this.camera.getWorldDirection(direction);
+        console.log('Camera look direction:', direction);
+
+        // Optionally, if you want to see an actual target point,
+        // you can compute it by adding the direction vector to the camera position:
+        const target = new THREE.Vector3().copy(this.camera.position).add(direction);
+        console.log('Camera target (position + direction):', target);
+      }
+    });
   }
 
 
