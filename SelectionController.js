@@ -76,36 +76,37 @@ class SelectionController extends THREE.EventDispatcher {
     event.preventDefault();
     if (!this.selected) return;
 
-    // Exclude the selected object from the intersection test.
+    // Get potential placement surfaces
     const objectsToTest = [
       this.groundPlane,
       ...this.selectableObjects.filter(obj => obj !== this.selected)
     ];
 
-    // Get intersections from the mouse ray.
+    // Find intersections
     const intersects = this.getIntersects(event, objectsToTest);
-    if (intersects.length > 0) {
-      const intersect = intersects[0];
-      const newPosition = intersect.point.clone();
+    if (intersects.length === 0) return;
 
-      // Use the intersected face's normal (transformed to world space)
-      // to lift the object. (For the ground plane, this normal is usually (0,1,0).)
-      if (intersect.face) {
-        const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-        const minUpwardAngle = 0.9; // ~25 degrees from vertical (0.9 = cos(25°))
-        // Only proceed if surface is mostly upward-facing
-        if (worldNormal.y < minUpwardAngle) return;
-        const halfHeight = 0.5; // TShape height = 1 unit, pivot at center
-        newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
-      }
-      // Optional: Snap to whole-number positions.
-      newPosition.x = Math.round(newPosition.x);
-      //newPosition.y = Math.round(newPosition.y);
-      newPosition.z = Math.round(newPosition.z);
+    const intersect = intersects[0];
+    const minUpwardAngle = 0.9;
 
-      this.selected.position.copy(newPosition);
-      this.dispatchEvent({ type: 'change' });
-    }
+    const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
+    if (worldNormal.y < minUpwardAngle) return;
+
+    // Calculate new position
+    const newPosition = intersect.point.clone();
+    newPosition.add(worldNormal.multiplyScalar(0.5)); // Half height offset
+
+    // Update and snap position
+    this.selected.position.copy(this.snapToGrid(newPosition));
+    this.dispatchEvent({ type: 'change' });
+  }
+
+  snapToGrid(position) {
+    return new THREE.Vector3(
+      Math.round(position.x),
+      position.y, // Maintain vertical offset from face normal
+      Math.round(position.z)
+    );
   }
 
   onWheel(event) {
