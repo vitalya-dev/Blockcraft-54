@@ -79,83 +79,67 @@ class SelectionController extends THREE.EventDispatcher {
     return null;
   }
 
-  // Toggle selection on mouse down.
   onMouseDown(event) {
     event.preventDefault();
     this.mapControls.enabled = false;
 
-    // Right mouse button rotates the selected object around its y-axis.
-    if (event.button === 2) { // RMB
-      if (this.selected) {
-        const angleStep = Math.PI / 2; // 90° in radians.
-        // Snap to the nearest multiple of 90°.
-        this.selected.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -angleStep);
-        //this.selected.rotation.y = Math.round(this.selected.rotation.y / angleStep) * angleStep;
-        this.dispatchEvent({ type: 'change' });
-      }
-    } else {
-       // Left mouse button (LMB) handling:
-      if (!this.selected) {
-        // No object selected – try to select one.
-        const intersects = this.getIntersects(event, this.selectableObjects);
-        const selectableUnderMouse = intersects.length > 0 ? this.findSelectable(intersects[0].object) : null;
-        if (selectableUnderMouse) {
-          this.selected = selectableUnderMouse;
-          this.selected.highlight();
-          this.dispatchEvent({ type: 'change' });
-          // Calculate offset from the clicked point to the object's position
-          const intersect = intersects[0];
+    switch (event.button) {
+      case 0: // Left Mouse Button
+        if (!this.selected) {
+          this.handleObjectSelection(event);
+        } else {
+          this.handleObjectPlacement();
         }
-      } else {
-        // An object is already selected – "place" it.
-        // Use a similar approach as onMouseMove to compute its new position.
-        const objectsToTest = [
-          this.groundPlane,
-          ...this.selectableObjects.filter(obj => obj !== this.selected)
-        ];
-        const intersects = this.getIntersects(event, objectsToTest);
-        if (intersects.length > 0) {
-          const intersect = intersects[0];
-          const newPosition = intersect.point.clone();
-          // If the intersected face exists, add its normal (transformed to world space)
-          // to the intersection point.
-          if (intersect.face) {
-            const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-            const halfHeight = 0.5; // TShape height = 1 unit, pivot at center
-            newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
-          }
-          // Optional: Snap to whole-number positions.
-          newPosition.x = Math.round(newPosition.x);
-          //newPosition.y = Math.round(newPosition.y);
-          newPosition.z = Math.round(newPosition.z);
+        break;
 
-          // Update the position 
-          this.selected.position.copy(newPosition);
+      case 2: // Right Mouse Button
+        this.handleObjectRotation();
+        break;
 
-          let collisionDetected = false;
-          for (const shape of this.selectableObjects) {
-            if (shape !== this.selected && this.selected.collidesWith(shape)) {
-              console.log(shape.getOccupiedCells());
-              console.log(this.selected.getOccupiedCells());
-              collisionDetected = true;
-              break;
-            }
-          }
-
-          console.log(collisionDetected);
-
-          if (!collisionDetected) {
-            // Deselect the object after placing it.
-            this.selected.removeHighlight();
-            this.selected = null;
-          }
-        }
-        this.dispatchEvent({ type: 'change' });
-      }
+      default:
+        // Optional: handle other buttons
+        break;
     }
-    if (!this.selected) {
-      this.mapControls.enabled = true;
+
+    this.updateControlsState();
+    this.dispatchEvent({ type: 'change' });
+  }
+
+  // Helper methods
+  handleObjectSelection(event) {
+    const intersects = this.getIntersects(event, this.selectableObjects);
+    const selectedObject = intersects.length > 0 
+      ? this.findSelectable(intersects[0].object)
+      : null;
+
+    if (selectedObject) {
+      this.selected = selectedObject;
+      this.selected.highlight();
     }
+  }
+
+  handleObjectPlacement() {
+    if (!this.hasCollisions()) {
+      this.selected.removeHighlight();
+      this.selected = null;
+    }
+  }
+
+  handleObjectRotation() {
+    if (!this.selected) return;
+    
+    const angleStep = Math.PI / 2;
+    this.selected.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -angleStep);
+  }
+
+  hasCollisions() {
+    return this.selectableObjects.some(shape => 
+      shape !== this.selected && this.selected.collidesWith(shape)
+    );
+  }
+
+  updateControlsState() {
+    this.mapControls.enabled = !this.selected;
   }
 
     // While moving the mouse, if an object is selected, update its position.
