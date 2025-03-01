@@ -92,7 +92,10 @@ class SelectionController extends THREE.EventDispatcher {
       // to lift the object. (For the ground plane, this normal is usually (0,1,0).)
       if (intersect.face) {
         const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-        const halfHeight = 0.51; // TShape height = 1 unit, pivot at center
+        const minUpwardAngle = 0.9; // ~25 degrees from vertical (0.9 = cos(25°))
+        // Only proceed if surface is mostly upward-facing
+        if (worldNormal.y < minUpwardAngle) return;
+        const halfHeight = 0.5; // TShape height = 1 unit, pivot at center
         newPosition.add(worldNormal.multiplyScalar(halfHeight)); // Add halfHeight offset
       }
       // Optional: Snap to whole-number positions.
