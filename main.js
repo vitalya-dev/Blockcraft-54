@@ -39,7 +39,12 @@ const CONFIG = {
       EMISSIVE: 0x000000
     },
     POSITIONS: [
-      {x: 18, z: 18},
+      {x: 18, z: 18},  // Tower 1 (10 blocks)
+      {x: 14, z: 18},   // Tower 2 (10 blocks)
+      {x: 10, z: 18}, // Tower 3 (10 blocks)
+      {x: 6, z: 18}, // Tower 4 (10 blocks)
+      {x: 2, z: 18},  // Tower 5 (10 blocks)
+      {x: -2, z: 18} // Tower 6 (4 blocks)
     ]
   },
 };
@@ -155,30 +160,26 @@ class SceneManager {
   }
 
   createTShapes() {
-    // Number of TShapes to stack
-    const numShapes = 18;
-    // Approximate height of each TShape
     const shapeHeight = 1;
-    // Use the x and z from the config's first position as our base position
-    const basePosition = CONFIG.T_SHAPES.POSITIONS[0];
-
     this.tShapes = [];
 
-    for (let i = 0; i < numShapes; i++) {
-      const material = new THREE.MeshToonMaterial({
-        color: CONFIG.T_SHAPES.MATERIAL.COLOR,
-        emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
-      });
-      const tShape = new TShape(material);
-      // Stack by increasing the y coordinate
-      tShape.position.set(
-        basePosition.x,
-        i * shapeHeight, // Each new TShape is placed 5 units higher than the previous one
-        basePosition.z
-      );
-      this.scene.add(tShape);
-      this.tShapes.push(tShape);
-    }
+    CONFIG.T_SHAPES.POSITIONS.forEach((position, index) => {
+      const numShapes = index < 5 ? 10 : 4; // 10 blocks for first 5 towers, 4 for the last
+      for (let i = 0; i < numShapes; i++) {
+        const material = new THREE.MeshToonMaterial({
+          color: CONFIG.T_SHAPES.MATERIAL.COLOR,
+          emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
+        });
+        const tShape = new TShape(material);
+        tShape.position.set(
+          position.x,
+          i * shapeHeight,
+          position.z
+        );
+        this.scene.add(tShape);
+        this.tShapes.push(tShape);
+      }
+    });
   }
 
   setupControls() {
@@ -188,25 +189,33 @@ class SceneManager {
 
   setupEventListeners() {
     window.addEventListener('keydown', (event) => {
-      // Check if the pressed key is "d" (or "D")
-      if (event.key.toLowerCase() === 'd') {
-        // Log the camera's current position
-        console.log('Camera position:', this.camera.position);
-
-        // Compute the camera's look direction.
-        // Note: Three.js does not store the "lookAt" target,
-        // so we compute the normalized forward direction.
-        const direction = new THREE.Vector3();
-        this.camera.getWorldDirection(direction);
-        console.log('Camera look direction:', direction);
-
-        // Optionally, if you want to see an actual target point,
-        // you can compute it by adding the direction vector to the camera position:
-        const target = new THREE.Vector3().copy(this.camera.position).add(direction);
-        console.log('Camera target (position + direction):', target);
+      if (event.key === 'd' || event.key === 'D') {
+        const serialized = this.serializeTShapes();
+        console.log(JSON.stringify(serialized, null, 2));
+        // Optional: Copy to clipboard for easy saving
+        navigator.clipboard.writeText(JSON.stringify(serialized))
+          .then(() => console.log('Data copied to clipboard!'))
+          .catch(err => console.error('Failed to copy data:', err));
       }
     });
   }
+
+
+serializeTShapes() {
+  return this.tShapes.map(tshape => ({
+    pos: {
+      x: tshape.position.x,
+      y: tshape.position.y,
+      z: tshape.position.z
+    },
+    rotation: {
+      x: tshape.rotation.x,
+      y: tshape.rotation.y,
+      z: tshape.rotation.z,
+      order: tshape.rotation.order
+    }
+  }));
+}
 
 
   onWindowResize() {
