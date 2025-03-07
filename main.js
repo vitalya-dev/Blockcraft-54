@@ -194,31 +194,34 @@ class SceneManager {
     window.addEventListener('keydown', (event) => {
       if (event.key === 'd' || event.key === 'D') {
         const serialized = this.serializeTShapes();
-        console.log(JSON.stringify(serialized, null, 2));
-        // Optional: Copy to clipboard for easy saving
-        navigator.clipboard.writeText(JSON.stringify(serialized))
-          .then(() => console.log('Data copied to clipboard!'))
+        // Format with 2-space indentation for both console and clipboard
+        const formattedData = JSON.stringify(serialized, null, 2);
+        console.log(formattedData);
+        
+        // Copy formatted version to clipboard
+        navigator.clipboard.writeText(formattedData)
+          .then(() => console.log('Formatted data copied to clipboard!'))
           .catch(err => console.error('Failed to copy data:', err));
       }
     });
   }
 
 
-serializeTShapes() {
-  return this.tShapes.map(tshape => ({
-    pos: {
-      x: tshape.position.x,
-      y: tshape.position.y,
-      z: tshape.position.z
-    },
-    rotation: {
-      x: tshape.rotation.x,
-      y: tshape.rotation.y,
-      z: tshape.rotation.z,
-      order: tshape.rotation.order
-    }
-  }));
-}
+  serializeTShapes() {
+    return this.tShapes.map(tshape => ({
+      pos: {
+        x: tshape.position.x,
+        y: tshape.position.y,
+        z: tshape.position.z
+      },
+      rotation: {
+        x: tshape.rotation.x,
+        y: tshape.rotation.y,
+        z: tshape.rotation.z,
+        order: tshape.rotation.order
+      }
+    }));
+  }
 
 
   onWindowResize() {
