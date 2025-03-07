@@ -178,6 +178,7 @@ class SceneManager {
         data.rotation.order
       );
       tShape.rotation.copy(rotation);
+      tShape.updateBlockPositions();
 
       this.scene.add(tShape);
       this.tShapes.push(tShape);
