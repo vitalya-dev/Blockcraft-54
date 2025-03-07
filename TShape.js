@@ -68,6 +68,7 @@ export default class TShape extends THREE.Group {
    * Updates block positions by selecting a position set based on the blocks' rounded y values.
    */
   updateBlockPositions() {
+    console.log("Update block positions");
     // Ensure all transformations are updated.
     this.updateMatrixWorld(true);
 
@@ -75,13 +76,18 @@ export default class TShape extends THREE.Group {
     const getRoundedY = index => {
       const pos = new THREE.Vector3();
       this.children[index].getWorldPosition(pos);
-      return Math.round(pos.y);
+      return Math.round(pos.y * 2) / 2;
     };
 
     const centerY = getRoundedY(0);
     const topY    = getRoundedY(3);
     const rightY  = getRoundedY(1);
     const leftY   = getRoundedY(2);
+
+    console.log(centerY);
+    console.log(topY);
+    console.log(rightY);
+    console.log(leftY);
 
     // Select the appropriate position set.
     let positions;
