@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import TShape from './TShape.js';
 import SelectionController from './SelectionController.js';
+import tshapesData from './tshapes_data.js';  // Changed from .json to .js
 
 // Configuration constants
 const CONFIG = {
@@ -37,15 +38,7 @@ const CONFIG = {
     MATERIAL: {
       COLOR: 0x8B4513,
       EMISSIVE: 0x000000
-    },
-    POSITIONS: [
-      {x: 18, z: 18},  // Tower 1 (10 blocks)
-      {x: 14, z: 18},   // Tower 2 (10 blocks)
-      {x: 10, z: 18}, // Tower 3 (10 blocks)
-      {x: 6, z: 18}, // Tower 4 (10 blocks)
-      {x: 2, z: 18},  // Tower 5 (10 blocks)
-      {x: -2, z: 18} // Tower 6 (4 blocks)
-    ]
+    }
   },
 };
 
@@ -160,25 +153,34 @@ class SceneManager {
   }
 
   createTShapes() {
-    const shapeHeight = 1;
     this.tShapes = [];
 
-    CONFIG.T_SHAPES.POSITIONS.forEach((position, index) => {
-      const numShapes = index < 5 ? 10 : 4; // 10 blocks for first 5 towers, 4 for the last
-      for (let i = 0; i < numShapes; i++) {
-        const material = new THREE.MeshToonMaterial({
-          color: CONFIG.T_SHAPES.MATERIAL.COLOR,
-          emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
-        });
-        const tShape = new TShape(material);
-        tShape.position.set(
-          position.x,
-          i * shapeHeight,
-          position.z
-        );
-        this.scene.add(tShape);
-        this.tShapes.push(tShape);
-      }
+    tshapesData.forEach(data => {
+      const material = new THREE.MeshToonMaterial({
+        color: CONFIG.T_SHAPES.MATERIAL.COLOR,
+        emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
+      });
+      
+      const tShape = new TShape(material);
+      
+      // Set position from JSON
+      tShape.position.set(
+        data.pos.x,
+        data.pos.y,
+        data.pos.z
+      );
+
+      // Set rotation from JSON
+      const rotation = new THREE.Euler(
+        data.rotation.x,
+        data.rotation.y,
+        data.rotation.z,
+        data.rotation.order
+      );
+      tShape.rotation.copy(rotation);
+
+      this.scene.add(tShape);
+      this.tShapes.push(tShape);
     });
   }
 

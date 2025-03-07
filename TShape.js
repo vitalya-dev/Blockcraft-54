@@ -111,7 +111,7 @@ export default class TShape extends THREE.Group {
       child.getWorldPosition(pos);
       return {
         x: Math.round(pos.x),
-        y: Math.round(pos.y),
+        y: parseFloat(pos.y.toFixed(1)),
         z: Math.round(pos.z)
       };
     });

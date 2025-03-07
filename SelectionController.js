@@ -94,7 +94,7 @@ class SelectionController extends THREE.EventDispatcher {
 
     // Calculate new position
     const newPosition = intersect.point.clone();
-    newPosition.add(worldNormal.multiplyScalar(0.51)); // Half height offset
+    newPosition.add(worldNormal.multiplyScalar(0.5)); // Half height offset
 
     // Update and snap position
     this.selected.position.copy(this.snapToGrid(newPosition));
@@ -104,7 +104,7 @@ class SelectionController extends THREE.EventDispatcher {
   snapToGrid(position) {
     return new THREE.Vector3(
       Math.round(position.x),
-      position.y, // Maintain vertical offset from face normal
+      Math.round(position.y * 2) / 2,  // Snap to nearest 0.5
       Math.round(position.z)
     );
   }
