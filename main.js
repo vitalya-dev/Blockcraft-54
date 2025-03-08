@@ -37,7 +37,6 @@ const CONFIG = {
   T_SHAPES: {
     MATERIAL: {
       COLOR: 0xffffff,
-      EMISSIVE: 0x000000
     }
   },
 };
@@ -95,7 +94,7 @@ class SceneManager {
     this.scene.add( ambientLight );
     // Remove all lights except shadow-casting light
     const mainLight = new THREE.DirectionalLight(0xffffff, .5);
-    mainLight.position.set(0, 1, 1);
+    mainLight.position.set(0, 1, 0);
     mainLight.castShadow = true;
     // Keep shadow camera settings
     this.scene.add(mainLight);
@@ -122,12 +121,8 @@ class SceneManager {
   createTShapes() {
     this.tShapes = [];
 
-    tshapesData.forEach(data => {
-      const material = new THREE.MeshLambertMaterial({
-        color: CONFIG.T_SHAPES.MATERIAL.COLOR
-      });
-      
-      const tShape = new TShape(material);
+    tshapesData.forEach(data => {      
+      const tShape = new TShape(CONFIG.T_SHAPES.MATERIAL.COLOR);
       
       // Set position from JSON
       tShape.position.set(

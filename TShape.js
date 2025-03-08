@@ -28,45 +28,53 @@ const POSITION_SETS = {
   ]
 };
 
+// Shared border texture
+const BORDER_TEXTURE = (() => {
+  console.log("create border texture");
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  
+  // White base with black border
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, 512, 512);
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 32;
+  ctx.strokeRect(16, 16, 480, 480);
+  
+  return new THREE.CanvasTexture(canvas);
+})();
+
 export default class TShape extends THREE.Group {
-  constructor(material) {
+  constructor(baseColor) {
     super();
     this.name = "TShape";
-    this.material = material;
-    this.castShadow = true;  // Enable shadow casting for the entire group
-    this.receiveShadow = true;  // Enable shadow receiving
-    // Use the 'center' set as the initial positions for the boxes.
+    this.castShadow = true;
+    this.receiveShadow = true;
+
+    // Create shared material with base color
+    this.material = new THREE.MeshPhongMaterial({
+      color: baseColor,
+      map: BORDER_TEXTURE,
+      emissive: 0x000000,
+      specular: 0x111111,
+      shininess: 30
+    });
+
     POSITION_SETS.center.forEach(pos => {
-      this.add(this.createBoxWithEdges(pos, material));
+      this.add(this.createBox(pos));
     });
   }
 
-  /**
-   * Creates a box mesh with edge lines at the given position.
-   */
-  createBoxWithEdges(pos, material) {
+  createBox(pos) {
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const box = new THREE.Mesh(geometry, material);
+    const box = new THREE.Mesh(geometry, this.material);
     box.position.set(...pos);
     box.name = "Tshape Box";
     box.tshape = this;
     box.castShadow = true;
     box.receiveShadow = true;
-
-    // Create thicker edges with improved contrast
-    const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(geometry),
-      new THREE.LineBasicMaterial({ 
-        color: 0x000000,
-        linewidth: 1, // Increased from default 1
-        depthTest: true // Add this for better visibility
-      })
-    );
-  
-    edges.tshape = this;
-    edges.raycast = () => {};
-    box.add(edges);
-  
     return box;
   }
 
@@ -74,7 +82,6 @@ export default class TShape extends THREE.Group {
    * Updates block positions by selecting a position set based on the blocks' rounded y values.
    */
   updateBlockPositions() {
-    console.log("Update block positions");
     // Ensure all transformations are updated.
     this.updateMatrixWorld(true);
 
@@ -89,11 +96,6 @@ export default class TShape extends THREE.Group {
     const topY = getRoundedY(3);
     const rightY = getRoundedY(1);
     const leftY = getRoundedY(2);
-
-    console.log(centerY);
-    console.log(topY);
-    console.log(rightY);
-    console.log(leftY);
 
     // Select the appropriate position set.
     let positions;
@@ -172,7 +174,7 @@ export default class TShape extends THREE.Group {
   }
 
   highlight() {
-    this.setEmissiveColor(0xffff00);
+    this.setEmissiveColor(0xCCCC00);
   }
 
   removeHighlight() {
