@@ -90,10 +90,10 @@ class SceneManager {
   }
 
   setupLighting() {
-    var ambientLight = new THREE.AmbientLight( 'white', 0.5 );
+    var ambientLight = new THREE.AmbientLight( 'white', 0.2 );
     this.scene.add( ambientLight );
     // Remove all lights except shadow-casting light
-    const mainLight = new THREE.DirectionalLight(0xffffff, .5);
+    const mainLight = new THREE.DirectionalLight(0xffffff, .7);
     mainLight.position.set(0, 1, 0);
     mainLight.castShadow = true;
     // Keep shadow camera settings
