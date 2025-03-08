@@ -6,6 +6,7 @@ import tshapesData from './tshapes_data.js';  // Changed from .json to .js
 // Configuration constants
 const CONFIG = {
   CAMERA: {
+    FOV: 45, // Add this
     POSITION: new THREE.Vector3(0, 20, 0),
     NEAR: 0.1,
     FAR: 1000
@@ -79,12 +80,9 @@ class SceneManager {
 
   createCamera() {
     const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 18; // Adjust this value to change the zoom level
-    const camera = new THREE.OrthographicCamera(
-      (frustumSize * aspect) / -2,  // left
-      (frustumSize * aspect) / 2,   // right
-      frustumSize / 2,              // top
-      frustumSize / -2,             // bottom
+    const camera = new THREE.PerspectiveCamera(
+      45, // Field of View (FOV) in degrees
+      aspect,
       CONFIG.CAMERA.NEAR,
       CONFIG.CAMERA.FAR
     );
@@ -233,11 +231,7 @@ class SceneManager {
 
   onWindowResize() {
     const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 50; // Same value used in createCamera
-    this.camera.left = (-frustumSize * aspect) / 2;
-    this.camera.right = (frustumSize * aspect) / 2;
-    this.camera.top = frustumSize / 2;
-    this.camera.bottom = -frustumSize / 2;
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.render();

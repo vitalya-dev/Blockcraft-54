@@ -57,8 +57,8 @@ export default class TShape extends THREE.Group {
       color: baseColor,
       map: BORDER_TEXTURE,
       emissive: 0x000000,
-      specular: 0x111111,
-      shininess: 30
+      //specular: 0x111111,
+      //shininess: 0
     });
 
     POSITION_SETS.center.forEach(pos => {
@@ -173,7 +173,7 @@ export default class TShape extends THREE.Group {
   }
 
   highlight() {
-    this.setEmissiveColor(0xCCCC00);
+    this.setEmissiveColor(0xc016070);
   }
 
   removeHighlight() {
