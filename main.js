@@ -11,7 +11,7 @@ const CONFIG = {
     FAR: 1000
   },
   RENDERER: {
-    CLEAR_COLOR: 0xeeeeee,
+    CLEAR_COLOR: 0xffffff,
     ANTIALIAS: true
   },
   LIGHTING: {
@@ -36,7 +36,7 @@ const CONFIG = {
   },
   T_SHAPES: {
     MATERIAL: {
-      COLOR: 0x8B4513,
+      COLOR: 0xffffff,
       EMISSIVE: 0x000000
     }
   },
@@ -79,7 +79,8 @@ class SceneManager {
 
   createRenderer() {
     const renderer = new THREE.WebGLRenderer({ 
-      antialias: CONFIG.RENDERER.ANTIALIAS 
+      antialias: CONFIG.RENDERER.ANTIALIAS,
+       powerPreference: "high-performance" // Better line rendering 
     });
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -90,52 +91,18 @@ class SceneManager {
   }
 
   setupLighting() {
-    // Ambient light to soften shadows
-    const ambientLight = new THREE.AmbientLight(
-      CONFIG.LIGHTING.AMBIENT.COLOR,
-      CONFIG.LIGHTING.AMBIENT.INTENSITY
-    );
-    this.scene.add(ambientLight);
-
-    // Main directional light
-    const mainLight = new THREE.DirectionalLight(
-      CONFIG.LIGHTING.DIRECTIONAL.COLOR,
-      CONFIG.LIGHTING.DIRECTIONAL.INTENSITY
-    );
-    mainLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
+    var ambientLight = new THREE.AmbientLight( 'white', 0.5 );
+    this.scene.add( ambientLight );
+    // Remove all lights except shadow-casting light
+    const mainLight = new THREE.DirectionalLight(0xffffff, .5);
+    mainLight.position.set(0, 1, 1);
     mainLight.castShadow = true;
-    // Configure shadow camera frustum
-    mainLight.shadow.camera.left = -40;
-    mainLight.shadow.camera.right = 40;
-    mainLight.shadow.camera.top = 40;
-    mainLight.shadow.camera.bottom = -40;
-    mainLight.shadow.camera.near = 0.1;
-    mainLight.shadow.camera.far = 100;
-
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
+    // Keep shadow camera settings
     this.scene.add(mainLight);
 
-    // Secondary directional light (right light)
-    // const rightLight = new THREE.DirectionalLight(
-    //   CONFIG.LIGHTING.DIRECTIONAL2.COLOR,
-    //   CONFIG.LIGHTING.DIRECTIONAL2.INTENSITY
-    // );
-    // rightLight.castShadow = true;
-    // rightLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
-    // rightLight.shadow.camera.left = -40;
-    // rightLight.shadow.camera.right = 40;
-    // rightLight.shadow.camera.top = 40;
-    // rightLight.shadow.camera.bottom = -40;
-    // rightLight.shadow.camera.near = 0.1;
-    // rightLight.shadow.camera.far = 100;
-    // rightLight.shadow.mapSize.width = 2048;
-    // rightLight.shadow.mapSize.height = 2048;
-    // this.scene.add(rightLight);
-
-    //Shadow-catching plane
+    // Keep shadow plane
     const shadowPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(40, 40),
+      new THREE.PlaneGeometry(200, 200),
       new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.2 })
     );
     shadowPlane.rotation.x = -Math.PI / 2;
@@ -156,9 +123,8 @@ class SceneManager {
     this.tShapes = [];
 
     tshapesData.forEach(data => {
-      const material = new THREE.MeshToonMaterial({
-        color: CONFIG.T_SHAPES.MATERIAL.COLOR,
-        emissive: CONFIG.T_SHAPES.MATERIAL.EMISSIVE
+      const material = new THREE.MeshLambertMaterial({
+        color: CONFIG.T_SHAPES.MATERIAL.COLOR
       });
       
       const tShape = new TShape(material);

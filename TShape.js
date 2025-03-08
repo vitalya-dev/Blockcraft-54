@@ -50,17 +50,23 @@ export default class TShape extends THREE.Group {
     box.position.set(...pos);
     box.name = "Tshape Box";
     box.tshape = this;
-    box.castShadow = true;  // Enable shadow casting for each box
-    box.receiveShadow = true;  // Enable shadow receiving
-    // Create and add edges to the box.
+    box.castShadow = true;
+    box.receiveShadow = true;
+
+    // Create thicker edges with improved contrast
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry),
-      new THREE.LineBasicMaterial({ color: 0x000000 })
+      new THREE.LineBasicMaterial({ 
+        color: 0x000000,
+        linewidth: 1, // Increased from default 1
+        depthTest: true // Add this for better visibility
+      })
     );
+  
     edges.tshape = this;
     edges.raycast = () => {};
     box.add(edges);
-    
+  
     return box;
   }
 
@@ -80,9 +86,9 @@ export default class TShape extends THREE.Group {
     };
 
     const centerY = getRoundedY(0);
-    const topY    = getRoundedY(3);
-    const rightY  = getRoundedY(1);
-    const leftY   = getRoundedY(2);
+    const topY = getRoundedY(3);
+    const rightY = getRoundedY(1);
+    const leftY = getRoundedY(2);
 
     console.log(centerY);
     console.log(topY);
