@@ -33,7 +33,7 @@ class SelectionController extends THREE.EventDispatcher {
     // Instantiate MapControls inside SelectionController.
     this.mapControls = new MapControls(camera, renderer.domElement);
     this.mapControls.enableRotate = true; // Customize as needed.
-    this.mapControls.maxPolarAngle = THREE.MathUtils.degToRad(35);
+    this.mapControls.maxPolarAngle = THREE.MathUtils.degToRad(45);
     this.mapControls.minAzimuthAngle = THREE.MathUtils.degToRad(-45);
     this.mapControls.maxAzimuthAngle = THREE.MathUtils.degToRad(45);
     // Forward map controls changes to a common "change" event.

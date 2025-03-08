@@ -22,12 +22,29 @@ const CONFIG = {
     DIRECTIONAL: {
       COLOR: 0xffffff,
       INTENSITY: 1.2,
-      POSITION: new THREE.Vector3(0, 20, 4)
+      POSITION: new THREE.Vector3(0, 20, 4),
+      SHADOW: {
+        CAMERA: {
+          LEFT: -40,
+          RIGHT: 40,
+          TOP: 40,
+          BOTTOM: -40,
+          NEAR: 0.5,
+          FAR: 50
+        }
+      }
     },
     DIRECTIONAL2: {
       COLOR: 0xffffff,
-      INTENSITY: 1.2,
+      INTENSITY: 0.8,
       POSITION: new THREE.Vector3(-4, 25, 0)
+    },
+    SHADOW_PLANE: {
+      SIZE: 40,
+      MATERIAL: {
+        COLOR: 0x000000,
+        OPACITY: 0.2
+      }
     }
   },
   GRID: {
@@ -79,7 +96,7 @@ class SceneManager {
   createRenderer() {
     const renderer = new THREE.WebGLRenderer({ 
       antialias: CONFIG.RENDERER.ANTIALIAS,
-       powerPreference: "high-performance" // Better line rendering 
+      powerPreference: "high-performance" // Better line rendering 
     });
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -90,19 +107,48 @@ class SceneManager {
   }
 
   setupLighting() {
-    var ambientLight = new THREE.AmbientLight( 'white', 0.2 );
-    this.scene.add( ambientLight );
-    // Remove all lights except shadow-casting light
-    const mainLight = new THREE.DirectionalLight(0xffffff, .7);
-    mainLight.position.set(0, 1, 0);
+    // Ambient light
+    const ambientLight = new THREE.AmbientLight(
+      CONFIG.LIGHTING.AMBIENT.COLOR,
+      CONFIG.LIGHTING.AMBIENT.INTENSITY
+    );
+    this.scene.add(ambientLight);
+
+    // Main directional light (shadow casting)
+    const mainLight = new THREE.DirectionalLight(
+      CONFIG.LIGHTING.DIRECTIONAL.COLOR,
+      CONFIG.LIGHTING.DIRECTIONAL.INTENSITY
+    );
+    mainLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
     mainLight.castShadow = true;
-    // Keep shadow camera settings
+    
+    // Shadow camera setup
+    mainLight.shadow.camera.left = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.LEFT;
+    mainLight.shadow.camera.right = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.RIGHT;
+    mainLight.shadow.camera.top = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.TOP;
+    mainLight.shadow.camera.bottom = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.BOTTOM;
+    mainLight.shadow.camera.near = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.NEAR;
+    mainLight.shadow.camera.far = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.FAR;
     this.scene.add(mainLight);
 
-    // Keep shadow plane
+    // Secondary directional light (fill light)
+    const fillLight = new THREE.DirectionalLight(
+      CONFIG.LIGHTING.DIRECTIONAL2.COLOR,
+      CONFIG.LIGHTING.DIRECTIONAL2.INTENSITY
+    );
+    fillLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
+    this.scene.add(fillLight);
+
+    // Shadow-receiving plane
     const shadowPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
-      new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.2 })
+      new THREE.PlaneGeometry(
+        CONFIG.LIGHTING.SHADOW_PLANE.SIZE,
+        CONFIG.LIGHTING.SHADOW_PLANE.SIZE
+      ),
+      new THREE.ShadowMaterial({
+        color: CONFIG.LIGHTING.SHADOW_PLANE.MATERIAL.COLOR,
+        opacity: CONFIG.LIGHTING.SHADOW_PLANE.MATERIAL.OPACITY
+      })
     );
     shadowPlane.rotation.x = -Math.PI / 2;
     shadowPlane.receiveShadow = true;
