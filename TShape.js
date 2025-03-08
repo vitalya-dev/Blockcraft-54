@@ -30,7 +30,6 @@ const POSITION_SETS = {
 
 // Shared border texture
 const BORDER_TEXTURE = (() => {
-  console.log("create border texture");
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 512;
