@@ -165,7 +165,7 @@ export default class TShape extends THREE.Group {
   }
 
   onHoverEnter() {
-    this.setEmissiveColor(0x555555);
+    this.setEmissiveColor(0x015060);
   }
 
   onHoverExit() {
@@ -173,7 +173,7 @@ export default class TShape extends THREE.Group {
   }
 
   highlight() {
-    this.setEmissiveColor(0xc016070);
+    this.setEmissiveColor(0x016070);
   }
 
   removeHighlight() {

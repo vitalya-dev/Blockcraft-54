@@ -19,6 +19,7 @@ class SelectionController extends THREE.EventDispatcher {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.offset = new THREE.Vector3(); // Initialize offset
+    this.currentHovered = null; // Track hovered object
 
     // Create an invisible ground plane for raycasting.
     // (This plane must be large enough to cover the grid area.)
@@ -74,31 +75,46 @@ class SelectionController extends THREE.EventDispatcher {
 
   onMouseMove(event) {
     event.preventDefault();
-    if (!this.selected) return;
+    
+    if (this.selected) {
+      // Existing placement logic
+      const objectsToTest = [
+        this.groundPlane,
+        ...this.selectableObjects.filter(obj => obj !== this.selected)
+      ];
 
-    // Get potential placement surfaces
-    const objectsToTest = [
-      this.groundPlane,
-      ...this.selectableObjects.filter(obj => obj !== this.selected)
-    ];
+      const intersects = this.getIntersects(event, objectsToTest);
+      if (intersects.length === 0) return;
 
-    // Find intersections
-    const intersects = this.getIntersects(event, objectsToTest);
-    if (intersects.length === 0) return;
+      const intersect = intersects[0];
+      const minUpwardAngle = 0.9;
 
-    const intersect = intersects[0];
-    const minUpwardAngle = 0.9;
+      const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
+      if (worldNormal.y < minUpwardAngle) return;
 
-    const worldNormal = intersect.face.normal.clone().transformDirection(intersect.object.matrixWorld);
-    if (worldNormal.y < minUpwardAngle) return;
+      const newPosition = intersect.point.clone();
+      newPosition.add(worldNormal.multiplyScalar(0.5));
 
-    // Calculate new position
-    const newPosition = intersect.point.clone();
-    newPosition.add(worldNormal.multiplyScalar(0.5)); // Half height offset
+      this.selected.position.copy(this.snapToGrid(newPosition));
+      this.dispatchEvent({ type: 'change' });
+    } else {
+      // Handle hover logic
+      const intersects = this.getIntersects(event, this.selectableObjects);
+      const newHovered = intersects.length > 0 
+        ? this.findSelectable(intersects[0].object)
+        : null;
 
-    // Update and snap position
-    this.selected.position.copy(this.snapToGrid(newPosition));
-    this.dispatchEvent({ type: 'change' });
+      if (newHovered !== this.currentHovered) {
+        if (this.currentHovered) {
+          this.currentHovered.onHoverExit();
+        }
+        if (newHovered) {
+          newHovered.onHoverEnter();
+        }
+        this.currentHovered = newHovered;
+        this.dispatchEvent({ type: 'change' });
+      }
+    }
   }
 
   snapToGrid(position) {
@@ -157,6 +173,12 @@ class SelectionController extends THREE.EventDispatcher {
       : null;
 
     if (selectedObject) {
+      // Clear previous hover state when selecting
+      if (this.currentHovered) {
+        this.currentHovered.onHoverExit();
+        this.currentHovered = null;
+      }
+      
       this.selected = selectedObject;
       this.selected.highlight();
     }
