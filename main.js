@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import TShape from './TShape.js';
 import SelectionController from './SelectionController.js';
 import tshapesData from './tshapes_data.js';  // Changed from .json to .js
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+import { Text3D } from './Text3D.js';
 
 // Configuration constants
 const CONFIG = {
@@ -75,6 +77,20 @@ class SceneManager {
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
+
+    const loader = new FontLoader();
+    loader.load('public/fonts/helvetiker_regular.typeface.json', (font) => {
+      const text = new Text3D("Hello world", {
+          font: font,
+          size: 100,
+          color: 0x00ff00,
+          lineColor: 0x000000,
+          fillOpacity: 0.8
+      });
+      
+      text.position.set(0, 0, 0);
+      this.scene.add(text);
+    });
     this.render();
   }
 
