@@ -82,7 +82,7 @@ class SceneManager {
     // Load font through the class
     const text = new Text3D("Async Text", {
         fontURL: 'public/fonts/helvetiker_regular.typeface.json',
-        size: 75,
+        size: 1,
         lineColor: 0x00ff00
     });      
     text.position.set(0, 0, 0);
