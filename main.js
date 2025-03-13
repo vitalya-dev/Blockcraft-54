@@ -78,19 +78,15 @@ class SceneManager {
     this.setupControls();
     this.setupEventListeners();
 
-    const loader = new FontLoader();
-    loader.load('public/fonts/helvetiker_regular.typeface.json', (font) => {
-      const text = new Text3D("Hello world", {
-          font: font,
-          size: 100,
-          color: 0x00ff00,
-          lineColor: 0x000000,
-          fillOpacity: 0.8
-      });
-      
-      text.position.set(0, 0, 0);
-      this.scene.add(text);
-    });
+
+    // Load font through the class
+    const text = new Text3D("Async Text", {
+        fontURL: 'public/fonts/helvetiker_regular.typeface.json',
+        size: 75,
+        lineColor: 0x00ff00
+    });      
+    text.position.set(0, 0, 0);
+    this.scene.add(text);
     this.render();
   }
 
