@@ -83,15 +83,15 @@ class SceneManager {
 
   setupUI() {
     this.createText3D(
-      "Управление:\nЛКМ - перемещение\nПКМ - поворот\nКолесо - масштаб",
-      new THREE.Vector3(-10.5, 0.1, -18), // Position in bottom-left corner
+      "Управление:\nЛКМ - выбрать блок\nПКМ - вращать блок горизонтально\nКолесо - вращать блок вертикально",
+      new THREE.Vector3(-5.5, 0.1, -18), // Position in bottom-left corner
       {
         size: 1, // Smaller size
         lineHeight: 1.2 // Tighter line spacing
       }
     );
-    this.createText3D("Отсюда", new THREE.Vector3(-8.5, 0.1, 10));
-    this.createText3D("Сюда", new THREE.Vector3(8.5, 0.1, 10));
+    this.createText3D("Перемести блок отсюда...", new THREE.Vector3(-8.5, 0.1, 10));
+    this.createText3D("сюда...", new THREE.Vector3(8.5, 0.1, 10));
   }
 
   createText3D(text, position, options = {}) {
