@@ -73,7 +73,7 @@ class SceneManager {
 
   init() {
     this.setupLighting();
-    this.setupGrid();
+    //this.setupGrid();
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
