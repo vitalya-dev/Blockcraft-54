@@ -77,17 +77,27 @@ class SceneManager {
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
-
-
-    // Load font through the class
-    const text = new Text3D("Async Text", {
-        fontURL: 'public/fonts/helvetiker_regular.typeface.json',
-        size: 1,
-        lineColor: 0x00ff00
-    });      
-    text.position.set(0, 0, 0);
-    this.scene.add(text);
+    this.setupTexts();
     this.render();
+  }
+
+  setupTexts() {
+    this.createText3D("Отсюда", new THREE.Vector3(-8.5, 0.1, 10));
+    this.createText3D("Сюда", new THREE.Vector3(8.5, 0.1, 10));
+  }
+
+  createText3D(text, position) {
+    const text3D = new Text3D(text, {
+      fontURL: 'public/fonts/Verdana_Regular.json',
+      size: 1,
+      color: 0x000000,
+      lineColor: 0xBBBBBB
+    });
+    
+    text3D.position.copy(position);
+    text3D.rotation.x = -Math.PI / 2;
+    this.scene.add(text3D);
+    return text3D;
   }
 
   createCamera() {

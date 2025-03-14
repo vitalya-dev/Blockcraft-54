@@ -30,7 +30,7 @@ class Text3D extends THREE.Object3D {
             size: 100,
             color: 0x006699,
             lineColor: 0x006699,
-            fillOpacity: 0.4
+            fillOpacity: 1
         };
 
         const settings = { ...defaults, ...options };
