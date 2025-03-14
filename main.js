@@ -54,6 +54,13 @@ const CONFIG = {
     SIZE: 40,
     DIVISIONS: 40
   },
+  TARGET_GRID: { // New target grid config
+    SIZE: 6,
+    DIVISIONS: 6,
+    POSITION: new THREE.Vector3(9.5, 0.1, 4.5), // Align with "сюда..." text
+    COLOR_CENTER: 0xCCCCCC, // Green center lines
+    COLOR_GRID: 0xBBBBBB   // Darker grid lines
+  },
   T_SHAPES: {
     MATERIAL: {
       COLOR: 0xffffff,
@@ -73,7 +80,7 @@ class SceneManager {
 
   init() {
     this.setupLighting();
-    //this.setupGrid();
+    this.setupGrid();
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
@@ -90,8 +97,8 @@ class SceneManager {
         lineHeight: 1.2 // Tighter line spacing
       }
     );
-    this.createText3D("Перемести блок отсюда...", new THREE.Vector3(-8.5, 0.1, 10));
-    this.createText3D("сюда...", new THREE.Vector3(8.5, 0.1, 10));
+    this.createText3D("Перемести блок отсюда", new THREE.Vector3(-8.5, 0.1, 10));
+    this.createText3D("сюда", new THREE.Vector3(9.5, 0.1, 10));
   }
 
   createText3D(text, position, options = {}) {
@@ -191,7 +198,16 @@ class SceneManager {
       CONFIG.GRID.DIVISIONS
     );
     gridHelper.position.set(0.5, 0, 0.5);
-    this.scene.add(gridHelper);
+    //this.scene.add(gridHelper);
+
+    const targetGrid = new THREE.GridHelper(
+      CONFIG.TARGET_GRID.SIZE,
+      CONFIG.TARGET_GRID.DIVISIONS,
+      CONFIG.TARGET_GRID.COLOR_CENTER,
+      CONFIG.TARGET_GRID.COLOR_GRID
+    );
+    targetGrid.position.copy(CONFIG.TARGET_GRID.POSITION);
+    this.scene.add(targetGrid);
   }
 
   createTShapes() {
