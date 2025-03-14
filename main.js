@@ -77,23 +77,33 @@ class SceneManager {
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
-    this.setupTexts();
+    this.setupUI();
     this.render();
   }
 
-  setupTexts() {
+  setupUI() {
+    this.createText3D(
+      "Управление:\nЛКМ - перемещение\nПКМ - поворот\nКолесо - масштаб",
+      new THREE.Vector3(-10.5, 0.1, -18), // Position in bottom-left corner
+      {
+        size: 1, // Smaller size
+        lineHeight: 1.2 // Tighter line spacing
+      }
+    );
     this.createText3D("Отсюда", new THREE.Vector3(-8.5, 0.1, 10));
     this.createText3D("Сюда", new THREE.Vector3(8.5, 0.1, 10));
   }
 
-  createText3D(text, position) {
-    const text3D = new Text3D(text, {
+  createText3D(text, position, options = {}) {
+    const mergedOptions = {
       fontURL: 'public/fonts/Verdana_Regular.json',
       size: 1,
       color: 0x000000,
-      lineColor: 0xBBBBBB
-    });
+      lineColor: 0xBBBBBB,
+      ...options
+    };
     
+    const text3D = new Text3D(text, mergedOptions);
     text3D.position.copy(position);
     text3D.rotation.x = -Math.PI / 2;
     this.scene.add(text3D);
