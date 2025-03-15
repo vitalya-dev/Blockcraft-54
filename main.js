@@ -240,7 +240,12 @@ class SceneManager {
 
   setupControls() {
     this.selectionController = new SelectionController(this.camera, this.scene, this.renderer, this.tShapes);
-    this.selectionController.addEventListener('change', () => this.render());
+    this.selectionController.addEventListener('change', () => {
+      this.render();
+      if (this.checkWinCondition()) {
+        this.handleWin();
+      }
+    });
   }
 
   setupEventListeners() {
@@ -257,6 +262,48 @@ class SceneManager {
           .catch(err => console.error('Failed to copy data:', err));
       }
     });
+  }
+
+
+  checkWinCondition() {
+    // Target grid boundaries (adjust if needed)
+    const targetBounds = {
+      minX: 6.5,  // 9.5 - 3
+      maxX: 12.5, // 9.5 + 3
+      minZ: 1.5,  // 4.5 - 3
+      maxZ: 7.5   // 4.5 + 3
+    };
+
+    for (const tShape of this.tShapes) {
+      for (const block of tShape.children) { // Ensure TShape exposes 'blocks' array
+        const worldPos = new THREE.Vector3();
+        block.getWorldPosition(worldPos);
+        console.log('Checking block at:', worldPos.x, worldPos.z);
+        console.log('Against bounds:', targetBounds);
+        if (
+          worldPos.x < targetBounds.minX ||
+          worldPos.x > targetBounds.maxX ||
+          worldPos.z < targetBounds.minZ ||
+          worldPos.z > targetBounds.maxZ
+        ) {
+          return false; // Block outside target
+        }
+      }
+    }
+    return true; // All blocks inside
+  }
+
+   handleWin() {
+    console.log('Victory!');
+    this.showWinMessage();
+    this.selectionController.enabled = false; // Disable further movement
+  }
+
+  showWinMessage() {
+    // Optional: Add small delay to prevent alert from appearing mid-interaction
+    setTimeout(() => {
+      alert("Win!!!");
+    }, 100);
   }
 
 
