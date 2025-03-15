@@ -186,8 +186,15 @@ class SelectionController extends THREE.EventDispatcher {
 
   handleObjectPlacement() {
     if (!this.hasCollisions()) {
-      this.selected.removeHighlight();
+      const placedObject = this.selected; // Capture reference before clearing
+      placedObject.removeHighlight();
       this.selected = null;
+      
+      // Dispatch custom event with placed object
+      this.dispatchEvent({ 
+        type: 'objectplaced', 
+        object: placedObject 
+      });
     }
   }
 

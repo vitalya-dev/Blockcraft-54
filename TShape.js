@@ -48,6 +48,7 @@ const BORDER_TEXTURE = (() => {
 export default class TShape extends THREE.Group {
   constructor(baseColor) {
     super();
+    this.isInTarget = false; 
     this.name = "TShape";
     this.castShadow = true;
     this.receiveShadow = true;

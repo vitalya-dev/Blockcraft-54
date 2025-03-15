@@ -242,6 +242,10 @@ class SceneManager {
     this.selectionController = new SelectionController(this.camera, this.scene, this.renderer, this.tShapes);
     this.selectionController.addEventListener('change', () => {
       this.render();
+    });
+
+    this.selectionController.addEventListener('objectplaced', (event) => {
+      event.object.isInTarget = this.isTShapeInTarget(event.object, true);
       if (this.checkWinCondition()) {
         this.handleWin();
       }
@@ -264,33 +268,56 @@ class SceneManager {
     });
   }
 
-
-  checkWinCondition() {
-    // Target grid boundaries (adjust if needed)
+  isTShapeInTarget(tShape, debug = false) {
     const targetBounds = {
-      minX: 6.5,  // 9.5 - 3
-      maxX: 12.5, // 9.5 + 3
-      minZ: 1.5,  // 4.5 - 3
-      maxZ: 7.5   // 4.5 + 3
+      minX: 7,
+      maxX: 12,
+      minZ: 2,
+      maxZ: 7
     };
 
-    for (const tShape of this.tShapes) {
-      for (const block of tShape.children) { // Ensure TShape exposes 'blocks' array
-        const worldPos = new THREE.Vector3();
-        block.getWorldPosition(worldPos);
-        console.log('Checking block at:', worldPos.x, worldPos.z);
-        console.log('Against bounds:', targetBounds);
-        if (
-          worldPos.x < targetBounds.minX ||
-          worldPos.x > targetBounds.maxX ||
-          worldPos.z < targetBounds.minZ ||
-          worldPos.z > targetBounds.maxZ
-        ) {
-          return false; // Block outside target
-        }
-      }
+    if (debug) {
+      console.groupCollapsed(`Checking TShape at ${tShape.position.toArray().map(v => v.toFixed(2)).join(', ')}`);
+      console.log('Target bounds:', JSON.stringify(targetBounds));
     }
-    return true; // All blocks inside
+
+    let allInBounds = true;
+    
+    for (const [index, block] of tShape.children.entries()) {
+      const worldPos = new THREE.Vector3();
+      block.getWorldPosition(worldPos);
+      
+      const inBounds = 
+        worldPos.x >= targetBounds.minX &&
+        worldPos.x <= targetBounds.maxX &&
+        worldPos.z >= targetBounds.minZ &&
+        worldPos.z <= targetBounds.maxZ;
+
+      if (debug) {
+        console.log(`Block ${index + 1}:`, {
+          position: {
+            x: worldPos.x,
+            z: worldPos.z
+          },
+          inBounds: inBounds,
+          status: inBounds ? '✅' : '❌'
+        });
+      }
+
+      if (!inBounds) allInBounds = false;
+    }
+
+    if (debug) {
+      console.log(`Final check: ${allInBounds ? '✅ All blocks in bounds' : '❌ Some blocks out of bounds'}`);
+      console.groupEnd();
+    }
+
+    return allInBounds;
+  }
+
+
+  checkWinCondition() {
+    return this.tShapes.every(t => t.isInTarget);
   }
 
    handleWin() {
