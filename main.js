@@ -272,6 +272,8 @@ class SceneManager {
     const targetBounds = {
       minX: 7,
       maxX: 12,
+      minY: 0.5,
+      maxY: 5.5,
       minZ: 2,
       maxZ: 7
     };
@@ -292,18 +294,21 @@ class SceneManager {
     
       // Round coordinates to 2 decimal places to avoid FP precision issues
       const x = round(worldPos.x);
+      const y = round(worldPos.y);
       const z = round(worldPos.z);
 
       const inBounds = 
         x >= targetBounds.minX &&
         x <= targetBounds.maxX &&
+        y >= targetBounds.minY &&
+        y <= targetBounds.maxY &&
         z >= targetBounds.minZ &&
         z <= targetBounds.maxZ;
 
       if (debug) {
         console.log(`Block ${index + 1}:`, {
-          rawPosition: { x: worldPos.x, z: worldPos.z },
-          roundedPosition: { x, z },
+          rawPosition: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+          roundedPosition: { x, y, z },
           inBounds: inBounds,
           status: inBounds ? '✅' : '❌'
         });
