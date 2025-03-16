@@ -282,23 +282,28 @@ class SceneManager {
     }
 
     let allInBounds = true;
-    
+  
+    // Helper function to round to 2 decimal places
+    const round = (num) => Math.round(num * 100) / 100;
+
     for (const [index, block] of tShape.children.entries()) {
       const worldPos = new THREE.Vector3();
       block.getWorldPosition(worldPos);
-      
+    
+      // Round coordinates to 2 decimal places to avoid FP precision issues
+      const x = round(worldPos.x);
+      const z = round(worldPos.z);
+
       const inBounds = 
-        worldPos.x >= targetBounds.minX &&
-        worldPos.x <= targetBounds.maxX &&
-        worldPos.z >= targetBounds.minZ &&
-        worldPos.z <= targetBounds.maxZ;
+        x >= targetBounds.minX &&
+        x <= targetBounds.maxX &&
+        z >= targetBounds.minZ &&
+        z <= targetBounds.maxZ;
 
       if (debug) {
         console.log(`Block ${index + 1}:`, {
-          position: {
-            x: worldPos.x,
-            z: worldPos.z
-          },
+          rawPosition: { x: worldPos.x, z: worldPos.z },
+          roundedPosition: { x, z },
           inBounds: inBounds,
           status: inBounds ? '✅' : '❌'
         });
@@ -320,7 +325,7 @@ class SceneManager {
     return this.tShapes.every(t => t.isInTarget);
   }
 
-   handleWin() {
+  handleWin() {
     console.log('Victory!');
     this.showWinMessage();
     this.selectionController.enabled = false; // Disable further movement
