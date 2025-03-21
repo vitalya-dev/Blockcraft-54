@@ -92,37 +92,34 @@ class SceneManager {
 
   async setupUI() {
     try {
-      // Load font first using the static method
       const font = await Text3D.loadFont('public/fonts/Verdana_Regular.json');
-    
-      // Create text elements with the preloaded font
-      this.createText3D(
-        "Управление:\nЛКМ - выбрать блок\nПКМ - вращать блок горизонтально\nКолесо - вращать блок вертикально",
-        new THREE.Vector3(-5.5, 0.1, -18),
-        { 
-          font: font, // Use preloaded font
-          size: 1,
-          lineHeight: 1.2
-        }
-      );
-    
-      this.createText3D("Перемести блок отсюда", new THREE.Vector3(-8.5, 0.1, 10), { font: font });
-      this.createText3D("сюда", new THREE.Vector3(9.5, 0.1, 10), { font: font });
+      this.createInstructionTexts(font);
     } catch (error) {
-      console.error('Failed to load font:', error);
+      console.error('UI setup failed:', error);
+      throw error;
     }
   }
 
+  createInstructionTexts(font) {
+    this.createText3D(
+      "Управление:\nЛКМ - выбрать блок\nПКМ - вращать блок горизонтально\nКолесо - вращать блок вертикально",
+      new THREE.Vector3(-5.5, 0.1, -18),
+      { font, size: 1, lineHeight: 1.2 }
+    );
+
+    this.createText3D("Перемести блок отсюда", new THREE.Vector3(-8.5, 0.1, 10), { font });
+    this.createText3D("сюда", new THREE.Vector3(9.5, 0.1, 10), { font });
+  }
+
   createText3D(text, position, options = {}) {
-    const mergedOptions = {
+    const text3D = new Text3D(text, {
       fontURL: 'public/fonts/Verdana_Regular.json',
       size: 1,
       color: 0x000000,
       lineColor: 0xBBBBBB,
       ...options
-    };
+    });
     
-    const text3D = new Text3D(text, mergedOptions);
     text3D.position.copy(position);
     text3D.rotation.x = -Math.PI / 2;
     this.scene.add(text3D);
