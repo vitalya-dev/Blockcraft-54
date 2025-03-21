@@ -75,30 +75,42 @@ class SceneManager {
     this.renderer = this.createRenderer();
     this.selectionController = null;
     this.tShapes = [];  
-    this.init();
+    this.init().catch((error) => {
+      console.error('Initialization failed:', error);
+    });
   }
 
-  init() {
+  async init() {
     this.setupLighting();
     this.setupGrid();
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
-    this.setupUI();
+    await this.setupUI(); // Wait for UI to completethis.setupUI();
     this.render();
   }
 
-  setupUI() {
-    this.createText3D(
-      "Управление:\nЛКМ - выбрать блок\nПКМ - вращать блок горизонтально\nКолесо - вращать блок вертикально",
-      new THREE.Vector3(-5.5, 0.1, -18), // Position in bottom-left corner
-      {
-        size: 1, // Smaller size
-        lineHeight: 1.2 // Tighter line spacing
-      }
-    );
-    this.createText3D("Перемести блок отсюда", new THREE.Vector3(-8.5, 0.1, 10));
-    this.createText3D("сюда", new THREE.Vector3(9.5, 0.1, 10));
+  async setupUI() {
+    try {
+      // Load font first using the static method
+      const font = await Text3D.loadFont('public/fonts/Verdana_Regular.json');
+    
+      // Create text elements with the preloaded font
+      this.createText3D(
+        "Управление:\nЛКМ - выбрать блок\nПКМ - вращать блок горизонтально\nКолесо - вращать блок вертикально",
+        new THREE.Vector3(-5.5, 0.1, -18),
+        { 
+          font: font, // Use preloaded font
+          size: 1,
+          lineHeight: 1.2
+        }
+      );
+    
+      this.createText3D("Перемести блок отсюда", new THREE.Vector3(-8.5, 0.1, 10), { font: font });
+      this.createText3D("сюда", new THREE.Vector3(9.5, 0.1, 10), { font: font });
+    } catch (error) {
+      console.error('Failed to load font:', error);
+    }
   }
 
   createText3D(text, position, options = {}) {
