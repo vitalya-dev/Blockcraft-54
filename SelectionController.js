@@ -45,6 +45,9 @@ class SelectionController extends THREE.EventDispatcher {
     this.renderer.domElement.addEventListener('mousemove', this.onMouseMove.bind(this), false);
     this.renderer.domElement.addEventListener('wheel', this.onWheel.bind(this), false);
     this.renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault(), false);
+
+    this.enabled = true; // Add enabled state
+
   }
 
   onMouseDown(event) {
@@ -74,6 +77,15 @@ class SelectionController extends THREE.EventDispatcher {
   }
 
   onMouseMove(event) {
+    if (!this.enabled) {
+      // Clear hover state if disabled
+      if (this.currentHovered) {
+        this.currentHovered.onHoverExit();
+        this.currentHovered = null;
+        this.dispatchEvent({ type: 'change' });
+      }
+      return;
+    }
     event.preventDefault();
     
     if (this.selected) {
@@ -167,6 +179,7 @@ class SelectionController extends THREE.EventDispatcher {
 
   // Helper methods
   handleObjectSelection(event) {
+    if (!this.enabled) return; // Add early exit
     const intersects = this.getIntersects(event, this.selectableObjects);
     const selectedObject = intersects.length > 0 
       ? this.findSelectable(intersects[0].object)

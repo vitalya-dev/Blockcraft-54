@@ -9,7 +9,7 @@ import { Text3D } from './Text3D.js';
 const CONFIG = {
   CAMERA: {
     FOV: 45, // Add this
-    POSITION: new THREE.Vector3(0, 20, 0),
+    POSITION: new THREE.Vector3(0, 45, 0),
     NEAR: 0.1,
     FAR: 1000
   },
