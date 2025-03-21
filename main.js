@@ -82,7 +82,7 @@ class SceneManager {
 
   async init() {
     this.setupLighting();
-    this.setupGrid();
+    this.setupGrids();
     this.createTShapes();
     this.setupControls();
     this.setupEventListeners();
@@ -153,40 +153,47 @@ class SceneManager {
   }
 
   setupLighting() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(
+    this.scene.add(this.createAmbientLight());
+    this.scene.add(this.createMainLight());
+    this.scene.add(this.createFillLight());
+    this.scene.add(this.createShadowPlane());
+  }
+
+  createAmbientLight() {
+    return new THREE.AmbientLight(
       CONFIG.LIGHTING.AMBIENT.COLOR,
       CONFIG.LIGHTING.AMBIENT.INTENSITY
     );
-    this.scene.add(ambientLight);
+  }
 
-    // Main directional light (shadow casting)
-    const mainLight = new THREE.DirectionalLight(
+  createMainLight() {
+    const light = new THREE.DirectionalLight(
       CONFIG.LIGHTING.DIRECTIONAL.COLOR,
       CONFIG.LIGHTING.DIRECTIONAL.INTENSITY
     );
-    mainLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
-    mainLight.castShadow = true;
     
-    // Shadow camera setup
-    mainLight.shadow.camera.left = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.LEFT;
-    mainLight.shadow.camera.right = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.RIGHT;
-    mainLight.shadow.camera.top = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.TOP;
-    mainLight.shadow.camera.bottom = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.BOTTOM;
-    mainLight.shadow.camera.near = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.NEAR;
-    mainLight.shadow.camera.far = CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA.FAR;
-    this.scene.add(mainLight);
+    light.position.copy(CONFIG.LIGHTING.DIRECTIONAL.POSITION);
+    light.castShadow = true;
+    
+    const shadowCam = light.shadow.camera;
+    Object.entries(CONFIG.LIGHTING.DIRECTIONAL.SHADOW.CAMERA).forEach(([prop, value]) => {
+      shadowCam[prop.toLowerCase()] = value;
+    });
 
-    // Secondary directional light (fill light)
-    const fillLight = new THREE.DirectionalLight(
+    return light;
+  }
+
+  createFillLight() {
+    const light = new THREE.DirectionalLight(
       CONFIG.LIGHTING.DIRECTIONAL2.COLOR,
       CONFIG.LIGHTING.DIRECTIONAL2.INTENSITY
     );
-    fillLight.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
-    this.scene.add(fillLight);
+    light.position.copy(CONFIG.LIGHTING.DIRECTIONAL2.POSITION);
+    return light;
+  }
 
-    // Shadow-receiving plane
-    const shadowPlane = new THREE.Mesh(
+  createShadowPlane() {
+    const plane = new THREE.Mesh(
       new THREE.PlaneGeometry(
         CONFIG.LIGHTING.SHADOW_PLANE.SIZE,
         CONFIG.LIGHTING.SHADOW_PLANE.SIZE
@@ -196,28 +203,37 @@ class SceneManager {
         opacity: CONFIG.LIGHTING.SHADOW_PLANE.MATERIAL.OPACITY
       })
     );
-    shadowPlane.rotation.x = -Math.PI / 2;
-    shadowPlane.receiveShadow = true;
-    this.scene.add(shadowPlane);
+    
+    plane.rotation.x = -Math.PI / 2;
+    plane.receiveShadow = true;
+    return plane;
   }
 
-  setupGrid() {
-    const gridHelper = new THREE.GridHelper(
+  setupGrids() {
+    //this.createMainGrid();
+    this.createTargetGrid();
+  }
+
+  createMainGrid() {
+    const grid = new THREE.GridHelper(
       CONFIG.GRID.SIZE,
       CONFIG.GRID.DIVISIONS
     );
-    gridHelper.position.set(0.5, 0, 0.5);
-    //this.scene.add(gridHelper);
+    grid.position.set(0.5, 0, 0.5);
+    this.scene.add(grid);
+  }
 
-    const targetGrid = new THREE.GridHelper(
+  createTargetGrid() {
+    const grid = new THREE.GridHelper(
       CONFIG.TARGET_GRID.SIZE,
       CONFIG.TARGET_GRID.DIVISIONS,
       CONFIG.TARGET_GRID.COLOR_CENTER,
       CONFIG.TARGET_GRID.COLOR_GRID
     );
-    targetGrid.position.copy(CONFIG.TARGET_GRID.POSITION);
-    this.scene.add(targetGrid);
+    grid.position.copy(CONFIG.TARGET_GRID.POSITION);
+    this.scene.add(grid);
   }
+
 
   createTShapes() {
     this.tShapes = [];
